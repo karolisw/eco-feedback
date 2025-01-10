@@ -1,6 +1,5 @@
 # A websocket that relays the data from the middleware to the visual-interface/dashboard
 from fastapi import FastAPI, WebSocket
-
 app = FastAPI()
 
 class VisualInterface:

@@ -1,15 +1,13 @@
 # This is the entry point of the program
 
-from Middleware.simulator_api import SimulatorAPI
+from Middleware.simulator.simulator_api import SimulatorAPI
 from Middleware.calculations import Calculator
-from Middleware.haptic_feedback import HapticFeedback
-from Middleware.controller_interface import ControllerInterface
-from Middleware.database import Database
-from Middleware.visual_interface import VisualInterface
+from Middleware.controller.haptic_feedback import HapticFeedback
+from Middleware.controller.controller_interface import ControllerInterface
+from Middleware.database.database import Database
+from Middleware.dashboard.visual_interface import VisualInterface
 import uvicorn
-from visual_interface import app
-
-
+from Middleware.dashboard.visual_interface import app
 
 def main():
     # Initialize components
