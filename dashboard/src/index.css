@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'Noto Sans';
-  src: url("../node_modules/@oicl/openbridge-webcomponents/dist/NotoSans.ttf")
-  }
-  
-  * {
-     font-family: Noto Sans;
-  }
+  src: url('../node_modules/@oicl/openbridge-webcomponents/dist/NotoSans.ttf');
+}
+
+* {
+  font-family: Noto Sans;
+}
 
 :root {
   /*font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;*/

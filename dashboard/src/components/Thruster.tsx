@@ -11,7 +11,7 @@ export function Thruster({
   thrust,
   setPoint,
   atSetpoint,
-  touching,
+  touching
 }: ThrusterProps) {
   return (
     <div>

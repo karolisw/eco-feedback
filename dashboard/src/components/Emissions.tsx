@@ -27,11 +27,11 @@ The BarGraph:
 */
 const BarGraph: React.FC<EmissionsProps> = ({
   currentEmissions,
-  targetEmissions,
+  targetEmissions
 }) => {
   const data = [
     { label: 'Current Emissions', value: currentEmissions },
-    { label: 'Target Emissions', value: targetEmissions },
+    { label: 'Target Emissions', value: targetEmissions }
   ]
 
   // These are helper functions that extract specific fields from the data objects
@@ -43,14 +43,14 @@ const BarGraph: React.FC<EmissionsProps> = ({
     range: [0, maxWidth],
     round: true,
     domain: data.map(x),
-    padding: 0.4,
+    padding: 0.4
   })
 
   // Maps numerical values (e.g., currentEmissions) to vertical positions on the chart.
   const yScale = scaleLinear({
     range: [maxHeight, 0],
     round: true,
-    domain: [0, Math.max(...data.map(y))],
+    domain: [0, Math.max(...data.map(y))]
   })
 
   /* 
@@ -84,7 +84,7 @@ const BarGraph: React.FC<EmissionsProps> = ({
 
 export const Emissions: React.FC<EmissionsProps> = ({
   currentEmissions,
-  targetEmissions,
+  targetEmissions
 }) => {
   return (
     <div>

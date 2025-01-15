@@ -18,7 +18,7 @@ export function Dashboard() {
     currentAngle: 80, // Between -90 and 90
     consumption: 0,
     currentEmissions: 20,
-    ecoScore: 100,
+    ecoScore: 100
   }
 
   const data = useWebSocket('ws://localhost:8000/ws', initialData)
