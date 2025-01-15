@@ -1,0 +1,6 @@
+Middleware/env/
+Middleware/Modbus GUI/
+Middleware/config.py
+/.vscode
+./main.tsx
+__pycache__
