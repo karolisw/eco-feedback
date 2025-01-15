@@ -32,7 +32,7 @@ Middleware → Visual Interface: Middleware sends the aggregated data (speed, di
 ### Activate and run the Python backend in one terminal:
 
 cd Middleware
-venv\Scripts\activate # Activate the virtual environment
+.\env\Scripts\activate.ps1 # Activate the virtual environment
 uvicorn main:app --reload
 
 ### Run the React frontend in another terminal:
@@ -48,8 +48,8 @@ npm start
 
 - Visual Interface (React): Displays the current speed, direction, and consumption. Can receive real-time updates from the middleware via WebSocket.
 
-- Controller: Transmits speed and direction inputs to the middleware.
+- Controller: Connects to the middleware. Transmits speed and direction information.
 
-- Database: Stores historical data for analysis or display.
+- Database: Connects to the middleware. Stores historical data for analysis or display. Uses the lightweight SQLite3 RDBM system, as this whole system is not very large, and will not surpass the prototype and developmental stage.
 
-- Simulator: Provides environmental data (e.g., wind, wave angles) to the middleware.
+- Simulator: Connects to the middleware. Provides environmental data (e.g., wind, wave angles).
