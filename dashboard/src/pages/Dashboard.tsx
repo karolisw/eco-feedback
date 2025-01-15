@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react'
-//import { ObcTopBar } from '@oicl/openbridge-webcomponents-react/components/top-bar/top-bar'
-//import { ObcAlertButton } from '@oicl/openbridge-webcomponents-react/components/alert-button/alert-button'
-//import { ObcAlertTopbarElement } from '@oicl/openbridge-webcomponents-react/components/alert-topbar-element/alert-topbar-element'
-import { ObcAzimuthThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster/azimuth-thruster'
+import { Rudder } from '../components/Rudder'
+import { Emissions } from '../components/Emissions'
+import { Thruster } from '../components/Thruster'
+
 type DashboardData = {
-  speed: number
-  direction: number
+  currentThrust: number
+  currentAngle: number
   consumption: number
-  emissions: number
-  eco_score: number
+  currentEmissions: number
+  ecoScore: number
 }
 
 export function Dashboard() {
+  const targetEmissions = 30 //TODO unsure if targetEmissions should originate from the server
   const [data, setData] = useState<DashboardData>({
-    speed: 0,
-    direction: 0,
+    currentThrust: 20,
+    currentAngle: 80, // Between -90 and 90
     consumption: 0,
-    emissions: 0,
-    eco_score: 100,
+    currentEmissions: 20,
+    ecoScore: 100,
   })
 
   useEffect(() => {
@@ -37,16 +38,19 @@ export function Dashboard() {
 
   return (
     <div>
-      <div className="wrapper" style={{ width: '384px', height: '384px' }}>
-        <ObcAzimuthThruster></ObcAzimuthThruster>
-      </div>
       <div>
         <h1>Ship Dashboard</h1>
-        <p>Speed: {data.speed}</p>
-        <p>Direction: {data.direction}</p>
-        <p>Consumption: {data.consumption}</p>
-        <p>Emissions: {data.emissions}</p>
-        <p>Eco-Score: {data.eco_score}</p>
+        <Thruster
+          thrust={data.currentThrust}
+          setPoint={10}
+          touching={true}
+          atSetpoint={false}
+        />
+        <Rudder angle={data.currentAngle} />
+        <Emissions
+          currentEmissions={data.currentEmissions}
+          targetEmissions={targetEmissions}
+        />
       </div>
     </div>
   )
