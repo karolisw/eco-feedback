@@ -1,27 +1,33 @@
 # Database connection and query handling - This is where the runs are stored and retrieved from the database
+import sqlite3
 
-from sqlalchemy import create_engine, Table, Column, Integer, Float, MetaData
-from config import DB_CONNECTION_STRING
 class Database:
-    def __init__(self):
-        self.engine = create_engine(DB_CONNECTION_STRING)
-        self.metadata = MetaData()
-        self.data_table = Table(
-            'data', self.metadata,
-            Column('id', Integer, primary_key=True),
-            Column('eco_score', Float),
-            Column('consumption', Float),
-            Column('emissions', Float),
-        )
-        self.metadata.create_all(self.engine)
+    def __init__(self, db_name="runs.db"):
+        self.connection = sqlite3.connect(db_name)
+        self.cursor = self.connection.cursor()
+        self.create_table()
 
-    def store_data(self, sim_data, eco_score, consumption, emissions):
-        with self.engine.connect() as conn:
-            conn.execute(
-                self.data_table.insert(),
-                {
-                    "eco_score": eco_score,
-                    "consumption": consumption,
-                    "emissions": emissions,
-                }
+    def create_table(self):
+        """Create the Run table if it doesn't already exist."""
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Run (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                eco_score REAL NOT NULL,
+                total_emissions REAL NOT NULL,
+                run_time REAL NOT NULL,
+                configuration_number INTEGER NOT NULL
             )
+        ''')
+        self.connection.commit()
+
+    def store_data(self, eco_score, total_emissions, run_time, configuration_number):
+        """Insert a new record into the Run table."""
+        self.cursor.execute('''
+            INSERT INTO Run (eco_score, total_emissions, run_time, configuration_number)
+            VALUES (?, ?, ?, ?)
+        ''', (eco_score, total_emissions, run_time, configuration_number))
+        self.connection.commit()
+
+    def close(self):
+        """Close the database connection."""
+        self.connection.close()
