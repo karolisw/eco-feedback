@@ -1,22 +1,34 @@
-# This is the entry point of the program
+import sys
+import os
+import asyncio
+from fastapi.middleware.cors import CORSMiddleware
+from simulator.simulator_api import SimulatorAPI
+from calculations import Calculator
+from controller.haptic_feedback import HapticFeedback
+from controller.controller_interface import ControllerInterface
+from database.database import Database
+from websocket.dashboard import Dashboard
+from websocket.dashboard import app
 
-from Middleware.simulator.simulator_api import SimulatorAPI
-from Middleware.calculations import Calculator
-from Middleware.controller.haptic_feedback import HapticFeedback
-from Middleware.controller.controller_interface import ControllerInterface
-from Middleware.database.database import Database
-from Middleware.dashboard.visual_interface import VisualInterface
 import uvicorn
-from Middleware.dashboard.visual_interface import app
 
-def main():
+async def main():
     # Initialize components
     simulator = SimulatorAPI()
     calculator = Calculator()
     haptic = HapticFeedback()
     controller = ControllerInterface()
     db = Database()
-    visual_interface = VisualInterface()
+    dashboard = Dashboard()
+    
+    # Configure CORS
+    app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to your frontend's URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
     # Main loop
@@ -37,20 +49,39 @@ def main():
         consumption = calculator.calculate_consumption(sim_data)
         emissions = calculator.calculate_emissions(sim_data)
         
-        # Aggregate all data
-        aggregated_data = {
-            "speed": controller_data['speed'],
-            "direction": controller_data['direction'],
+        # Aggregate all data #TODO edit this such that it matches the new database setup/structure
+        aggregated_data1 = {
+            "currentThrust": controller_data['SPEED'],
+            "currentAngle": controller_data['ANGLE'],
             "consumption": consumption,
-            "emissions": emissions,
-            "eco_score": eco_score,
+            "currentEmissions": emissions,
+            "ecoScore": eco_score,
         }
         
+        aggregated_data = {
+            "currentThrust": 10,
+            "currentAngle": 180,
+            "consumption": 5,
+            "currentEmissions": 12,
+            "ecoScore": 85.5,
+        }
+        
+        print("sending data to dashboard", aggregated_data)
+        db = Database()
+        
         # Send data to the visual interface
-        visual_interface.send_data(aggregated_data)
+        await dashboard.send_data(aggregated_data)
+        await asyncio.sleep(1)
+        
+        # Add a run to the database
+        db.store_data(eco_score=85.5, total_emissions=120.3, run_time=3600, configuration_number=1)
 
-        # Store data in the database
-        db.store_data(sim_data, eco_score, consumption, emissions) # TODO should this be in the loop - could be way too much data
+        # Fetch all runs
+        db.cursor.execute("SELECT * FROM Run")
+        runs = db.cursor.fetchall()
+        print(len(runs))
+
+        db.close()
 
         # Provide haptic feedback
         haptic.provide_feedback(sim_data, eco_score)
@@ -61,7 +92,7 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
     
     # Running the FastAPI app will make the websocket endpoint available to the React frontend
     uvicorn.run(app, host="0.0.0.0", port=8000)
