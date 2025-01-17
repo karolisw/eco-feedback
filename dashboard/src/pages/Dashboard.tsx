@@ -1,7 +1,7 @@
 import { Rudder } from '../components/Rudder'
 import { Emissions } from '../components/Emissions'
 import { Thruster } from '../components/Thruster'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { UseWebSocket } from '../hooks/useWebSocket'
 
 type DashboardData = {
   currentThrust: number
@@ -21,8 +21,9 @@ export function Dashboard() {
     ecoScore: 100
   }
 
-  const data = useWebSocket('ws://localhost:8000/ws', initialData)
+  const data = UseWebSocket('ws://127.0.0.1:8000/ws', initialData)
 
+  console.log(data)
   return (
     <div>
       <div>
