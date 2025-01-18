@@ -1,8 +1,14 @@
 # Manages communication betweeen the middleware and the controller
 
 class ControllerInterface:
-    def transmit_direction(self, direction):
-        print(f"Transmitting direction: {direction}")
+    def get_angle(self):
+        return 30
 
-    def transmit_speed(self, speed):
-        print(f"Transmitting speed: {speed}")
+    def get_speed(self):
+        return 15
+        
+    def get_data(self):
+        return {
+            'speed': self.get_speed(),
+            'angle': self.get_angle()
+        }
