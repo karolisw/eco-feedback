@@ -1,6 +1,6 @@
 # Manages communication betweeen the middleware and the controller
 
-class ControllerInterface:
+class ControllerApi:
     def get_angle(self):
         return 30
 
