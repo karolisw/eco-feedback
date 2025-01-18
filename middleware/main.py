@@ -2,9 +2,9 @@ import asyncio
 import uvicorn
 
 from simulator.mock_simulator_api import MockSimulatorAPI
+from controller.mock_controller_api import MockControllerAPI
 from calculations import Calculator
 from controller.haptic_feedback import HapticFeedback
-from controller.controller_interface import ControllerInterface
 from database.database import Database
 from websocket.dashboard import dashboard, app
 
@@ -21,7 +21,7 @@ async def main_loop():
     simulator = MockSimulatorAPI()
     calculator = Calculator()
     haptic = HapticFeedback()
-    controller = ControllerInterface()
+    controller = MockControllerAPI()
     db = Database()
     
     # Clean up the database before run
@@ -33,7 +33,7 @@ async def main_loop():
         sim_data = simulator.get_data()
         
         # Get inputs from the controller
-        controller_data = controller.get_data()  # E.g., {'speed': 10, 'direction': 180}
+        controller_data = controller.get_data()  # E.g., {'speed': 10, 'angle': 180}
         
         # Send updated speed and direction to the simulator
         simulator.send_data(controller_data) 
