@@ -23,6 +23,9 @@ async def main_loop():
     haptic = HapticFeedback()
     controller = ControllerInterface()
     db = Database()
+    
+    # Clean up the database before run
+    db.clear_data()
 
     # Main loop
     while True:

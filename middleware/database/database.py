@@ -27,6 +27,13 @@ class Database:
             VALUES (?, ?, ?, ?)
         ''', (eco_score, total_emissions, run_time, configuration_number))
         self.connection.commit()
+    
+    # Remove all data from database
+    def clear_data(self):
+        self.cursor.execute('''
+            DELETE FROM Run
+        ''')
+        self.connection.commit()
 
     def close(self):
         """Close the database connection."""
