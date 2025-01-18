@@ -1,35 +1,28 @@
-import sys
-import os
 import asyncio
-from fastapi.middleware.cors import CORSMiddleware
-from simulator.simulator_api import SimulatorAPI
+import uvicorn
+
+from simulator.mock_simulator_api import MockSimulatorAPI
 from calculations import Calculator
 from controller.haptic_feedback import HapticFeedback
 from controller.controller_interface import ControllerInterface
 from database.database import Database
-from websocket.dashboard import Dashboard
-from websocket.dashboard import app
+from websocket.dashboard import dashboard, app
 
-import uvicorn
+@app.on_event("startup")
+async def startup_event():
+    print("Starting up the middleware")
+    asyncio.create_task(main_loop())
 
-async def main():
+async def main_loop():
+    """
+    Main loop that runs continuously during the application lifespan.
+    """
     # Initialize components
-    simulator = SimulatorAPI()
+    simulator = MockSimulatorAPI()
     calculator = Calculator()
     haptic = HapticFeedback()
     controller = ControllerInterface()
     db = Database()
-    dashboard = Dashboard()
-    
-    # Configure CORS
-    app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your frontend's URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
     # Main loop
     while True:
@@ -40,33 +33,24 @@ async def main():
         controller_data = controller.get_data()  # E.g., {'speed': 10, 'direction': 180}
         
         # Send updated speed and direction to the simulator
-        # TODO this is a bit confusing, we are sending data to the simulator and getting data back (no handling)
-
-        simulator_data = simulator.send_data(controller_data) 
+        simulator.send_data(controller_data) 
+        
         
         # Process eco-feedback calculations
-        eco_score = calculator.calculate_eco_score(sim_data)
-        consumption = calculator.calculate_consumption(sim_data)
-        emissions = calculator.calculate_emissions(sim_data)
+        eco_score = calculator.calculate_eco_score(controller_data=controller_data, simulator_data=sim_data)
+        consumption = calculator.calculate_consumption(controller_data=controller_data, simulator_data=sim_data)
+        emissions = calculator.calculate_emissions(controller_data=controller_data, simulator_data=sim_data)
+    
         
         # Aggregate all data #TODO edit this such that it matches the new database setup/structure
-        aggregated_data1 = {
-            "currentThrust": controller_data['SPEED'],
-            "currentAngle": controller_data['ANGLE'],
+        aggregated_data = {
+            "currentThrust": controller_data['speed'],
+            "currentAngle": controller_data['angle'],
             "consumption": consumption,
             "currentEmissions": emissions,
             "ecoScore": eco_score,
         }
         
-        aggregated_data = {
-            "currentThrust": 10,
-            "currentAngle": 180,
-            "consumption": 5,
-            "currentEmissions": 12,
-            "ecoScore": 85.5,
-        }
-        
-        print("sending data to dashboard", aggregated_data)
         db = Database()
         
         # Send data to the visual interface
@@ -79,20 +63,14 @@ async def main():
         # Fetch all runs
         db.cursor.execute("SELECT * FROM Run")
         runs = db.cursor.fetchall()
-        print(len(runs))
 
         db.close()
 
         # Provide haptic feedback
         haptic.provide_feedback(sim_data, eco_score)
 
-        # Transmit data to the controller 
-        controller.transmit_direction(sim_data['direction'])
-        controller.transmit_speed(sim_data['speed'])
 
     
 if __name__ == "__main__":
-    asyncio.run(main())
-    
     # Running the FastAPI app will make the websocket endpoint available to the React frontend
     uvicorn.run(app, host="0.0.0.0", port=8000)
