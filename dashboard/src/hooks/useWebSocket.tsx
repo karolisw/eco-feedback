@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 type DashboardData = {
   currentThrust: number
@@ -10,6 +10,11 @@ type DashboardData = {
 
 export function UseWebSocket(url: string, initialData: DashboardData) {
   const [data, setData] = useState<DashboardData>(initialData)
+  // TODO make  webscocket ref 
+  //const ws = useRef<WebSocket | null>(null)
+
+  const latestData = useRef<DashboardData>(initialData)
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isConnected, setIsConnected] = useState<boolean>(false)
 
@@ -26,7 +31,8 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
         const newData: DashboardData = JSON.parse(
           event.data as string
         ) as DashboardData
-        if (isDashboardData(newData)) {
+        if (isDashboardData(newData) && newData !== latestData.current) {
+          latestData.current = newData
           setData(newData)
         } else {
           console.error('Received data is not of type DashboardData', newData)
