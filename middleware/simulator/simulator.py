@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Filename: eco_feedback_middleware.py
+# Filename: simulator.py
 # Description: Middleware for analyzing ship movement vs. environmental forces
 
 import numpy as np
