@@ -1,6 +1,6 @@
 # application/main_service.py
 import asyncio
-from infrastructure.database.database import Database
+from persistance.database import Database
 from infrastructure.websocket.dashboard import dashboard
 import random
 
