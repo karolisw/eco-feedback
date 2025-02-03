@@ -1,6 +1,6 @@
-middleware/env/
-middleware/config.py
+backend/env/
+backend/runs.db
+backend/utils.py
 /.vscode
 __pycache__
 modbus_gui
-cospy

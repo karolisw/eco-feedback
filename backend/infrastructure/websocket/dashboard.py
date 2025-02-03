@@ -40,7 +40,7 @@ class Dashboard:
             print(f"WebSocket disconnected: {e}")
             self.clients.remove(websocket)
 
-# Create a global websocket to dashboard instance
+# A global websocket (Singleton) that communicates with the frontend/dashboard
 dashboard = Dashboard()
 
 # Define the WebSocket endpoint
