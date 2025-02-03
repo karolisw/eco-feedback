@@ -1,4 +1,5 @@
 # application/vessel_handler.py
+# A handler processes and manages the state of something (e.g., VesselHandler updates vessel movement).
 import numpy as np
 from infrastructure.cos_api.vessel_adapter import VesselAdapter
 
@@ -17,3 +18,6 @@ class VesselHandler:
 
     def get_latest_heading(self):
         return self.latest_heading
+    
+    def get_info(self):
+        return self.vessel_adapter.get_vessel_info()

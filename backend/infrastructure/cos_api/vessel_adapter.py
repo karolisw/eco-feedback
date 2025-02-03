@@ -2,7 +2,7 @@
 from cos.core.api.Vessel import Vessel
 
 class VesselAdapter:
-    """Handles vessel communication"""
+    """Handles vessel communication for a single vessel."""
     def __init__(self, vessel_id):
         self.vessel = Vessel()
         self.vessel_id = vessel_id

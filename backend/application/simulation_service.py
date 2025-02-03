@@ -4,14 +4,13 @@ from cos.tools.cviz.Dispatcher import Dispatcher
 from cos.tools.cviz.RPCAgent import RPCAgent
 from application.vessel_handler import VesselHandler
 from application.eco_feedback import EcoFeedback
-from infrastructure.cos_api.weather_adapter import WeatherAdapter
-
+from application.weather_handler import WeatherHandler
 class SimulationService:
     """Controls simulation"""
     def __init__(self, vessel_id):
         self.dispatch = Dispatcher(self)
         self.vessel_handler = VesselHandler(vessel_id)
-        self.weather_adapter = WeatherAdapter()
+        self.weather_handler = WeatherHandler()
         self.ipc = RPCAgent()
         self.ipc.connect()
 
@@ -38,12 +37,10 @@ class SimulationService:
         """ Updates vessel state when vessel moves. """
         self.vessel_handler.update_vessel_state(vessel_data)
 
+    # TODO needs work, but good enough for now
     def on_weather_update(self, weather_data):
-        """ Calculates eco-feedback based on weather impact. """
-        ship_heading = self.vessel_handler.get_latest_heading()
-        for vector in weather_data.get("vectors", []):
-            direction = vector["X"][:2]  # Only x, y components
-            resistance_angle = EcoFeedback.calculate_resistance_effect(ship_heading, direction)
-            print(f"Ship vs. {weather_data['type']} Angle: {resistance_angle}°")
-            if resistance_angle > 150:
-                print("⚠️ High resistance detected! Ship is moving against the current.")
+        """ Updates weather state when weather changes. """
+        self.weather_handler.update_weather(weather_data)
+        results = self.weather_handler.process_weather_effects(self.vessel_handler.get_latest_heading())
+        print(f"the first result is", results[0])
+        
