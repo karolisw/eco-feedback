@@ -1,8 +1,6 @@
 import time
-import threading
 from pymodbus import FramerType
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient # Handles Modbus communication for RTU (serial) and TCP (Ethernet).
-from pymodbus.payload import BinaryPayloadDecoder # Decodes modbus' register values (e.g., FLOAT, INT).
 from pymodbus.constants import Endian # Defines how data bytes are ordered.
 from pymodbus.exceptions import ModbusIOException # Handles Modbus communication errors.    
 import numpy as np
@@ -13,46 +11,34 @@ from pymodbus.client.mixin import ModbusClientMixin
 # Import configurations for connecting to the azimuth controller
 config = yaml.safe_load(open("config.yaml"))
 
-# TODO divide into class that reads data and class that handles/processes the data
 class AzimuthController:
-    def __init__(self, connection_type="RTU", port=None, baudrate=9600, ip="127.0.0.1", tcp_port=502, slave_id=1, csv_file="Interfacing Overview - Export.csv"):
+    def __init__(self, connection_type="RTU"):
         """
         Initializes the azimuth controller communication.
 
         :param connection_type: "RTU" for serial, "TCP" for Ethernet.
-        :param port: Serial port for RTU (e.g., "COM3" or "/dev/ttyUSB0").
-        :param baudrate: Baud rate for serial communication.
-        :param ip: IP address for TCP connection.
-        :param tcp_port: Port number for TCP connection.
-        :param slave_id: Modbus slave address of the controller.
-        :param csv_file: CSV file containing register mappings.
         """
-        self.registers = {}
-        self.connection_type = connection_type
-        self.port = port
-        self.baudrate = baudrate
-        self.ip = ip
-        self.tcp_port = tcp_port
-        self.slave_id = slave_id
+        self.connection_type = connection_type.upper()
         self.client = None
-        self.running = False
-        self.data = self.read_csv(csv_file)  # Load register configurations
+        self.registers = {}
+
+        # Load Modbus parameters from config
+        self.slave_id = config["rtu"]["slave_id"]
+        self.max_attempts = config["MAX_ATTEMPTS"]
+        self.retry_delay = config["RETRY_DELAY"]
+
+        if self.connection_type == "RTU":
+            self.port = config["rtu"]["port"]
+            self.baudrate = config["rtu"]["baudrate"]
+            self.stopbits = config["rtu"]["stopbits"]
+            self.bytesize = config["rtu"]["bytesize"]
+            self.parity = config["rtu"]["parity"]
+            self.csv_file = config["rtu"]["csv_file"]
+        else:
+            self.ip = config["tcp"]["ip"]
+            self.tcp_port = config["tcp"]["tcp_port"]
 
         self.DATATYPE = ModbusClientMixin.DATATYPE
-
-        self.valid_coils = [0x00, 0x01, 0x02, 0x03, 0x04,  # Functions and sensors
-                            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,  # LED settings
-                            0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,  # Detent settings
-                            0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x60, 0x61, 0x62  # Detent settings
-                            ]  
-
-        self.valid_hregs = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,  # Functions and sensors
-                            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, # LED settings
-                            0x30, 0x31,  # Boundary settings
-                            0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49]  # Detent positions
-
-        self.valid_iregs = [0x00, 0x02, 0x04, 0x06]  # Functions and sensors
-        # Connect based on type
         self.connect()
 
             
@@ -114,16 +100,12 @@ class AzimuthController:
             }
         
         self.registers = regs
-        print("[INFO] Assigned registers:", len(regs))
-        print("[INFO] Register keys:", list(regs.keys()))
-        print("[INFO] IREG keys:", [k for k in regs.keys() if "IREG" in k])
-        print("[INFO] IREG values")
 
     # Function to Fetch Register Data
     def fetch_register_data(self, registers):
         """Fetches data from all registers."""
         if not self.client or not self.client.connected:
-            print("[WARNING] Not connected to Modbus server.")
+            print("[WARNING] Not connected to Modbus.")
             return
 
         data_values = {}
@@ -153,9 +135,8 @@ class AzimuthController:
                     data_values[key] = result.registers[0] if result else None
 
                 elif reg_type == 'IREG' and data_type == 'FLOAT':
-                    for offset in [100, 200]:  # Match GUI logic
+                    for offset in [100, 200]:  
                         offset_address = address + offset
-                        #print(f"Reading FLOAT IREG at address {offset_address}")  # Debugging
                         result = self.client.read_input_registers(offset_address, count=2, slave=self.slave_id)
                         if result and result.registers:
                             value = self.client.convert_from_registers(result.registers, self.DATATYPE.FLOAT32, word_order="little")
@@ -166,7 +147,6 @@ class AzimuthController:
                 print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
             except Exception as e:
                 print(f"[ERROR] Unexpected error while reading {reg_type} {address}: {e}")
-                print(f"[DEBUG] Failed Response: {result}")
 
         return data_values
 
@@ -174,10 +154,6 @@ class AzimuthController:
     def update_data(self):
         """Continuously fetches data every second."""
         while True:
-            if not self.client.connect():
-                print("[ERROR] Failed to connect to Modbus server.")
-                break
-
             data = self.fetch_register_data(self.registers)
             print("[DATA UPDATE] :", len(data))  # Print updated values
             print(data)
@@ -204,6 +180,6 @@ class AzimuthController:
             
 # Draft, but this is an example of how to use the AzimuthController class
 if __name__ == "__main__":
-    controller = AzimuthController(connection_type="RTU", port="COM3", baudrate=38400, slave_id=1)
+    controller = AzimuthController(connection_type="RTU")
     controller.run()
   
