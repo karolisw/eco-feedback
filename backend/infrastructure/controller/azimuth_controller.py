@@ -160,15 +160,7 @@ class AzimuthController:
                         if result and result.registers:
                             value = self.client.convert_from_registers(result.registers, self.DATATYPE.FLOAT32, word_order="little")
                             new_value = str(round(value, 3))
-
-                elif reg_type == 'IREG':                    
-                    #result = self.client.read_input_registers(address, count=1, slave=self.slave_id)  # Keep original address
-                    if result and result.registers:
-                        raw_value = result.registers[0]
-                        # Convert to signed integer if needed (matches GUI logic)
-                        value = raw_value - 65536 if raw_value > 32767 else raw_value
-                        data_values[key] = round(value, 3)  # Keep 3 decimal places like the GUI
-                        print("the value is", value)
+                            data_values[key] = new_value
 
             except ModbusIOException as e:
                 print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
@@ -187,10 +179,9 @@ class AzimuthController:
                 break
 
             data = self.fetch_register_data(self.registers)
-            print("[DATA UPDATE] length:", len(data))  # Print updated values
-            print("The data: ", data)
-
-            time.sleep(1)
+            print("[DATA UPDATE] :", len(data))  # Print updated values
+            print(data)
+            time.sleep(10)
 
 
     def run(self):
