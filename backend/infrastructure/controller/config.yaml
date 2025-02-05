@@ -1,0 +1,12 @@
+tcp:
+    ip: "127.0.0.1"
+    tcp_port: 502
+
+rtu:
+    port: "USB-SERIAL CH340 (COM3)"
+    csv_file: "Interfacing Overview - Export.csv"
+    stopbits: 1
+    bytesize: 8
+    parity: "N"
+    baudrate: 9600
+    slave_id: 1

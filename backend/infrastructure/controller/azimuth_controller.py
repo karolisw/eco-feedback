@@ -160,11 +160,8 @@ class AzimuthController:
                         if result and result.registers:
                             value = self.client.convert_from_registers(result.registers, self.DATATYPE.FLOAT32, word_order="little")
                             new_value = str(round(value, 3))
-                            print("the value using convert_from_registers: ", new_value)
 
                 elif reg_type == 'IREG':                    
-                    result = self.client.read_input_registers(206, count=2, slave=self.slave_id)
-                    print(result)
                     #result = self.client.read_input_registers(address, count=1, slave=self.slave_id)  # Keep original address
                     if result and result.registers:
                         raw_value = result.registers[0]
@@ -191,6 +188,7 @@ class AzimuthController:
 
             data = self.fetch_register_data(self.registers)
             print("[DATA UPDATE] length:", len(data))  # Print updated values
+            print("The data: ", data)
 
             time.sleep(1)
 
