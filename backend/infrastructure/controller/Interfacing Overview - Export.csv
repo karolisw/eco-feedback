@@ -1,0 +1,80 @@
+SECTION,NAME,REG,ADD,CAN,R-ONLY,TYPE,GEN,AX1,AX2,DEF,MIN,MAX,UNIT,PER,SECURE,DEV,SECTION_INDEX
+Functions and sensors,ENABLE_HOMING,COIL,x00,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,ENABLE_DETENTS,COIL,x01,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,ENABLE_VIBRATION,COIL,x02,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,ENABLE_BOUNDARIES,COIL,x03,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,ENABLE_SETPOINT,COIL,x04,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,STRENGTH_DETENTS,HREG,x00,,,UINT,X,X,X,3,1,3,,X,,,1
+Functions and sensors,STRENGTH_VIBRATION,HREG,x01,,,UINT,X,X,X,3,1,3,,X,,,1
+Functions and sensors,STRENGTH_BOUNDARIES,HREG,x02,,,UINT,X,X,X,3,1,3,,X,,,1
+Functions and sensors,SPEED,HREG,x03,,,UINT,X,X,X,3,1,3,,X,,,1
+Functions and sensors,POSITION_SETPOINT,HREG,x04,,,INT,X,X,X,0,-180,180,% or °,,,,1
+Functions and sensors,DEPRICATED_MODBUS_BAUD_1,HREG,x05,,,UINT,X,,,38400,0,65536,baud,X,,,1
+Functions and sensors,DEPRICATED_MODBUS_SLAVE_1,HREG,x06,,,UINT,X,,,1,0,247,,X,,,1
+Functions and sensors,STRENGTH_FRICTION,HREG,x07,,,UINT,X,X,X,3,1,3,,X,,,1
+Functions and sensors,POSITION,IREG,x00,,X,FLOAT,,X,X,,-180,180,% or °,,,,1
+Functions and sensors,ANGLE,IREG,x02,,X,FLOAT,,X,X,,-180,180,°,,,,1
+Functions and sensors,SENS_IN,IREG,x04,,X,FLOAT,,X,X,,0,1,,,,,1
+Functions and sensors,SENS_OUT,IREG,x06,,X,FLOAT,,X,X,,0,1,,,,,1
+LED settings,SHOW_ANGLE,COIL,x10,,,BOOL,X,X,X,1,,,,,,,2
+LED settings,SHOW_DETENTS,COIL,x11,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_BOUNDARIES,COIL,x12,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_SETPOINT,COIL,x13,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_SPRING_SETPOINT,COIL,x14,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_ZONES,COIL,x15,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_WARNING,COIL,x16,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,SHOW_ANIMATION,COIL,x17,,,BOOL,X,X,X,0,,,,,,,2
+LED settings,COLOR_ANGLE,HREG,x10,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_DETENTS,HREG,x11,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_BOUNDARIES,HREG,x12,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_SETPOINT,HREG,x13,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_SPRING_SETPOINT,HREG,x14,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_ZONES,HREG,x15,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_WARNING,HREG,x16,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_ANIMATION_A,HREG,x17,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,COLOR_ANIMATION_B,HREG,x18,,,UINT,X,X,X,1,1,11,,X,,,2
+LED settings,ANIMATION_NUMBER,HREG,x19,,,UINT,X,X,X,1,1,9,,X,,,2
+LED settings,MAX_BRIGHTNESS,HREG,x20,,,UINT,X,X,X,100,0,100,,X,,,2
+LED settings,ZONE_01_MIN,HREG,x21,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_01_MAX,HREG,x22,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_02_MIN,HREG,x23,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_02_MAX,HREG,x24,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_03_MIN,HREG,x25,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_03_MAX,HREG,x26,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_04_MIN,HREG,x27,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+LED settings,ZONE_04_MAX,HREG,x28,,,INT,X,X,X,0,-180,180,% or °,X,,,2
+Boundary settings,LOWER_BOUNDARY,HREG,x30,,,INT,X,X,X,-180,-180,0,% or °,X,,,3
+Boundary settings,UPPER_BOUNDARY,HREG,x31,,,INT,X,X,X,180,0,180,% or °,X,,,3
+Detent settings,ENABLE_DETENT_01,COIL,x40,,,BOOL,X,X,X,1,,,,X,,,4
+Detent settings,ENABLE_DETENT_02,COIL,x41,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_03,COIL,x42,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_04,COIL,x43,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_05,COIL,x44,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_06,COIL,x45,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_07,COIL,x46,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_08,COIL,x47,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_09,COIL,x48,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_10,COIL,x49,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,DETENT_01_POS,HREG,x40,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_02_POS,HREG,x41,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_03_POS,HREG,x42,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_04_POS,HREG,x43,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_05_POS,HREG,x44,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_06_POS,HREG,x45,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_07_POS,HREG,x46,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_08_POS,HREG,x47,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_09_POS,HREG,x48,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Detent settings,DETENT_10_POS,HREG,x49,,,INT,X,X,X,0,-180,180,% or °,X,,,4
+Startup settings,STARTUP_ENABLE_HOMING,COIL,x50,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_ENABLE_DETENTS,COIL,x51,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_ENABLE_VIBRATION,COIL,x52,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_ENABLE_BOUNDARIES,COIL,x53,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_ENABLE_SETPOINT,COIL,x54,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_ANGLE,COIL,x55,,,BOOL,X,X,X,1,,,,X,,,5
+Startup settings,STARTUP_SHOW_DETENTS,COIL,x56,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_BOUNDARIES,COIL,x57,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_SETPOINT,COIL,x58,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_SPRING_SETPOINT,COIL,x59,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_ZONES,COIL,x60,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_WARNING,COIL,x61,,,BOOL,X,X,X,0,,,,X,,,5
+Startup settings,STARTUP_SHOW_ANIMATION,COIL,x62,,,BOOL,X,X,X,0,,,,X,,,5

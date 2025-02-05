@@ -4,3 +4,5 @@ backend/utils.py
 /.vscode
 __pycache__
 modbus_gui
+vesseljs-master
+backend/infrastructure/controller/examples
