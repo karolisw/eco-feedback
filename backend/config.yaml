@@ -13,3 +13,4 @@ rtu:
 
 MAX_ATTEMPTS: 5
 RETRY_DELAY: 1
+PATH_TO_DB: "./runs.db"
