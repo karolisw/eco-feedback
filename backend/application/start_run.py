@@ -1,10 +1,5 @@
-import asyncio
 import os
 import sqlite3
-import random
-from infrastructure.websocket.dashboard import dashboard
-# Import path_to_db from config.yaml
-
 
 class MainService:
     """Handles the core functionality of the application"""
@@ -24,6 +19,17 @@ class MainService:
         # Clear database before starting
         cursor.execute("DELETE FROM Run")
         conn.commit()
+    
+        
+        # TODO refactor class - i probably might not even need the class
+        # 1) create a call that stores the data in the database
+        # 2) create a call that fetches the data from the database
+        # 3) the logic to start a simulation could easily just be moved to backend/main.py
+        # 4) the methods stated in 1) and 2) could be moved into /persistance/database.py
+        # 5) the instantiation of the database connection could be moved to /persistance/database.py as well - or main.py
+        
+        
+        """
 
         while True:
             # Aggregate and store data
@@ -45,6 +51,7 @@ class MainService:
             #print(f"Stored data: {aggregated_data}")
 
             await asyncio.sleep(5)  # Simulate a periodic update
+            """
 
         # Close the database connection when exiting
         conn.close()
