@@ -1,25 +1,37 @@
+import os
 import time
 import yaml
+import threading
 import numpy as np
+
 from pymodbus import FramerType
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.client.mixin import ModbusClientMixin
 
-
 class AzimuthController:
-    def __init__(self, connection_type="RTU", config_file="config.yaml"):
+    def __init__(self, connection_type="RTU", config_file=None):
         """
         Initializes the azimuth controller communication.
 
         :param connection_type: "RTU" for serial, "TCP" for Ethernet.
         :param config_file: Path to the configuration file.
         """
+        self.lock = threading.Lock()  # Thread-safe access
         self.connection_type = connection_type.upper()
         self.client = None
         self.registers = {}
+        self.latest_data = {}  # Store latest register data
+        self.DATATYPE = ModbusClientMixin.DATATYPE
 
+        # Determine the base directory (backend/)
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
+        # Set default config file path if not provided
+        if config_file is None:
+            config_file = os.path.join(base_dir, "config.yaml") 
+            
         # Load configuration
         with open(config_file, "r") as file:
             self.config = yaml.safe_load(file)
@@ -39,7 +51,6 @@ class AzimuthController:
             self.ip = self.config["tcp"]["ip"]
             self.tcp_port = self.config["tcp"]["tcp_port"]
 
-        self.DATATYPE = ModbusClientMixin.DATATYPE
         self.connect()
 
     def connect(self):
@@ -166,17 +177,23 @@ class AzimuthController:
                 print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
             except Exception as e:
                 print(f"[ERROR] Unexpected error while reading {reg_type} {address}: {e}")
-
+            with self.lock:
+                self.latest_data = data_values  # Store the latest data
+                
         return data_values
+    
 
-    def update_data(self, interval=10):
+    def get_latest_data(self):
+        """Provide the latest register data for external use."""
+        with self.lock:
+            return self.latest_data.copy() 
+
+    def update_data(self, interval=1):
         """Continuously fetches data every 'interval' seconds."""
         print("[INFO] Starting data update loop...")
         try:
             while True:
                 data = self.fetch_register_data()
-                print("[DATA UPDATE]:", len(data))
-                print(data)
                 time.sleep(interval)
         except KeyboardInterrupt:
             print("[INFO] Stopping script...")
@@ -187,3 +204,5 @@ class AzimuthController:
         print("[INFO] Assigning registers...")
         self.assign_registers()
         self.update_data()
+        
+controller = AzimuthController(connection_type="RTU")
