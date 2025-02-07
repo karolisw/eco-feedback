@@ -1,11 +1,11 @@
+import asyncio
 import os
 import time
 import yaml
-import threading
 import numpy as np
 
 from pymodbus import FramerType
-from pymodbus.client import ModbusSerialClient, ModbusTcpClient
+from pymodbus.client import ModbusSerialClient, ModbusTcpClient, AsyncModbusSerialClient, AsyncModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.client.mixin import ModbusClientMixin
@@ -18,7 +18,7 @@ class AzimuthController:
         :param connection_type: "RTU" for serial, "TCP" for Ethernet.
         :param config_file: Path to the configuration file.
         """
-        self.lock = threading.Lock()  # Thread-safe access
+        self.lock = asyncio.Lock()  # Thread-safe access
         self.connection_type = connection_type.upper()
         self.client = None
         self.registers = {}
@@ -51,18 +51,18 @@ class AzimuthController:
             self.ip = self.config["tcp"]["ip"]
             self.tcp_port = self.config["tcp"]["tcp_port"]
 
-        self.connect()
+        #self.connect()
 
-    def connect(self):
+    async def connect(self):
         """Attempts to establish a Modbus connection."""
         print(f"[INFO] Connecting via {self.connection_type}...")
 
         if self.client:
             print("[INFO] Closing previous connection...")
-            self.client.close()
+            await self.client.close()
 
         if self.connection_type == "RTU":
-            self.client = ModbusSerialClient(
+            self.client = AsyncModbusSerialClient(
                 framer=FramerType.RTU,
                 port=self.port,
                 baudrate=self.baudrate,
@@ -71,27 +71,27 @@ class AzimuthController:
                 parity=self.parity,
             )
         else:
-            self.client = ModbusTcpClient(self.ip, port=self.tcp_port)
+            self.client = AsyncModbusTcpClient(self.ip, port=self.tcp_port)
 
         # Retry loop for connection attempts
         for attempt in range(self.max_attempts):
-            if self.client.connect():
+            if await self.client.connect():
                 print(f"[INFO] Connection established on attempt {attempt + 1}")
                 return True
             print(f"[WARNING] Connection attempt {attempt + 1} failed. Retrying in {self.retry_delay} seconds...")
-            time.sleep(self.retry_delay)
+            await asyncio.sleep(self.retry_delay)
 
         print("[ERROR] Failed to connect after multiple attempts.")
         return False
 
-    def disconnect(self):
+    async def disconnect(self): 
         """Disconnects the Modbus connection."""
         if self.client:
-            self.client.close()
+            await self.client.close()
             self.client = None
             print("[INFO] Disconnected from azimuth controller.")
 
-    def read_csv(self):
+    def read_csv(self): 
         """Reads the CSV file and extracts register configurations."""
         try:
             data = np.genfromtxt(self.csv_file, delimiter=",", dtype="str", skip_header=1)
@@ -100,7 +100,7 @@ class AzimuthController:
             print(f"[ERROR] Failed to read CSV file: {e}")
             return None
 
-    def assign_registers(self):
+    def assign_registers(self): # TODO async?
         """Creates a dictionary of registers based on the CSV file."""
         data = self.read_csv()
         if data is None:
@@ -122,87 +122,90 @@ class AzimuthController:
         self.registers = regs
         print(f"[INFO] Assigned {len(regs)} registers.")
 
-    def fetch_register_data(self):
-        """Fetches data from all registers."""
+    
+    async def fetch_register_data(self):
         if not self.client or not self.client.connected:
             print("[WARNING] Not connected to Modbus server.")
             return {}
 
         data_values = {}
+        
+        async with self.lock:  # Ensure thread safety with asyncio.Lock()
 
-        for key, reg in self.registers.items():
-            reg_type = reg["reg_type"]
-            address = reg["address"]
-            data_type = reg["data_type"]
+            for key, reg in self.registers.items():
+                reg_type = reg["reg_type"]
+                address = reg["address"]
+                data_type = reg["data_type"]
 
-            try:
-                if reg_type == "COIL":
-                    result = self.client.read_coils(address, count=1, slave=self.slave_id)
-                    data_values[key] = result.bits[0] if result else None
+                try:
+                    if reg_type == "COIL":
+                        result = await self.client.read_coils(address, count=1, slave=self.slave_id)
+                        data_values[key] = result.bits[0] if result else None
 
-                elif reg_type == "ISTS":
-                    result = self.client.read_discrete_inputs(address, count=1, slave=self.slave_id)
-                    data_values[key] = result.bits[0] if result else None
+                    elif reg_type == "ISTS":
+                        result = await self.client.read_discrete_inputs(address, count=1, slave=self.slave_id)
+                        data_values[key] = result.bits[0] if result else None
 
-                elif reg_type == "HREG" and data_type == "FLOAT":
-                    result = self.client.read_holding_registers(address, count=2, slave=self.slave_id)
-                    if result and result.registers:
-                        value = self.client.convert_from_registers(
-                            result.registers, float, byteorder=Endian.BIG, wordorder=Endian.LITTLE
-                        )
-                        data_values[key] = round(value, 3)
-
-                elif reg_type == "HREG":
-                    result = self.client.read_holding_registers(address, count=1, slave=self.slave_id)
-                    data_values[key] = result.registers[0] if result else None
-
-                elif reg_type == "IREG" and data_type == "FLOAT":
-                    for offset in [100, 200]:
-                        offset_address = address + offset
-                        result = self.client.read_input_registers(offset_address, count=2, slave=self.slave_id)
+                    elif reg_type == "HREG" and data_type == "FLOAT":
+                        result = await self.client.read_holding_registers(address, count=2, slave=self.slave_id)
                         if result and result.registers:
                             value = self.client.convert_from_registers(
-                                result.registers, self.DATATYPE.FLOAT32, word_order="little"
+                                result.registers, float, byteorder=Endian.BIG, wordorder=Endian.LITTLE
                             )
-                            data_values[f"{key}_{offset}"] = round(value, 3)
+                            data_values[key] = round(value, 3)
 
-                elif reg_type == "IREG":
-                    result = self.client.read_input_registers(address, count=1, slave=self.slave_id)
-                    if result and result.registers:
-                        raw_value = result.registers[0]
-                        value = raw_value - 65536 if raw_value > 32767 else raw_value
-                        data_values[key] = round(value, 3)
+                    elif reg_type == "HREG":
+                        result = await self.client.read_holding_registers(address, count=1, slave=self.slave_id)
+                        data_values[key] = result.registers[0] if result else None
 
-            except ModbusIOException as e:
-                print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
-            except Exception as e:
-                print(f"[ERROR] Unexpected error while reading {reg_type} {address}: {e}")
-            with self.lock:
-                self.latest_data = data_values  # Store the latest data
+                    elif reg_type == "IREG" and data_type == "FLOAT":
+                        for offset in [100, 200]:
+                            offset_address = address + offset
+                            result = await self.client.read_input_registers(offset_address, count=2, slave=self.slave_id)
+                            if result and result.registers:
+                                value = self.client.convert_from_registers(
+                                    result.registers, self.DATATYPE.FLOAT32, word_order="little"
+                                )
+                                data_values[f"{key}_{offset}"] = round(value, 3)
+
+                    elif reg_type == "IREG":
+                        result = await self.client.read_input_registers(address, count=1, slave=self.slave_id)
+                        if result and result.registers:
+                            raw_value = result.registers[0]
+                            value = raw_value - 65536 if raw_value > 32767 else raw_value
+                            data_values[key] = round(value, 3)
+
+                except ModbusIOException as e:
+                    print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
+                except Exception as e:
+                    print(f"[ERROR] Unexpected error while reading {reg_type} {address}: {e}")
                 
+                self.latest_data = data_values  # Store the latest data
+                    
         return data_values
     
 
-    def get_latest_data(self):
+    async def get_latest_data(self):
         """Provide the latest register data for external use."""
-        with self.lock:
-            return self.latest_data.copy() 
+        #return self.latest_data.copy()
+        return self.latest_data.copy()
+        #with self.lock:
+         #   return self.latest_data.copy() 
 
-    def update_data(self, interval=1):
+    async def update_data(self, interval=0.1):
         """Continuously fetches data every 'interval' seconds."""
         print("[INFO] Starting data update loop...")
-        try:
-            while True:
-                data = self.fetch_register_data()
-                time.sleep(interval)
-        except KeyboardInterrupt:
-            print("[INFO] Stopping script...")
-            self.disconnect()
+        while True:
+            await self.fetch_register_data()
+            await asyncio.sleep(interval)
 
-    def run(self):
+    async def run(self):
         """Initial setup and start the update loop."""
         print("[INFO] Assigning registers...")
         self.assign_registers()
-        self.update_data()
+        await self.connect()  # Ensure connection is established
+        asyncio.create_task(self.update_data())  # Run update in background #TODO why asyncio.create_task necessary
+
         
 controller = AzimuthController(connection_type="RTU")
+#asyncio.create_task(controller.connect())  # Ensures async connection setup

@@ -2,6 +2,7 @@ import { Rudder } from '../components/Rudder'
 import { Emissions } from '../components/Emissions'
 import { Thruster } from '../components/Thruster'
 import { UseWebSocket } from '../hooks/useWebSocket'
+import { memo } from 'react'
 
 type DashboardData = {
   currentThrust: number
@@ -23,24 +24,30 @@ export function Dashboard() {
 
   const data = UseWebSocket('ws://127.0.0.1:8000/ws', initialData)
 
-  console.log(data)
+  //console.log(data)
   return (
     <div>
       <div>
         <h1>Ship Dashboard</h1>
-        <Thruster
-          thrust={data.currentThrust}
+        <MemoizedThruster
+          thrust={data.data.currentThrust}
+          angle={data.data.currentAngle}
           setPoint={10}
           touching={true}
           atThrustSetpoint={false}
           atAngleSetpoint={false}
         />
-        <Rudder angle={data.currentAngle} />
-        <Emissions
-          currentEmissions={data.currentEmissions}
+        <MemoizedRudder angle={data.data.currentAngle} />
+        <MemoizedEmissions
+          currentEmissions={data.data.currentEmissions}
           targetEmissions={targetEmissions}
         />
       </div>
     </div>
   )
 }
+
+// Memoized Components to prevent unnecessary re-renders
+const MemoizedThruster = memo(Thruster)
+const MemoizedRudder = memo(Rudder)
+const MemoizedEmissions = memo(Emissions)
