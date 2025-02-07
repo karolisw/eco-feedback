@@ -276,90 +276,6 @@ class App(ctk.CTk):
         except Exception as e:
             logger.error(f"Error saving settings: {e}")
       
-    
-    def connect_fail(self):
-        """Connects to the Modbus device and prevents overwriting the UI state unnecessarily."""
-        
-        # Update status and connect button
-        self.connecting = True
-        self.status_lbl.configure(text="Status: CONNECTING")
-        self.button_connect.configure(state="disabled")
-        self.button_disconnect.configure(state="disabled")
-
-        # Make either RTU or TCP connection
-        if self.type_dropdown.get() == "RTU":
-            try:
-                self.slave = int(self.slave_entry.get())
-            except ValueError:
-                logger.error("Invalid slave address")
-                return
-            port = self.com_ports.get(self.com_dropdown.get(), None)
-            if not port:
-                logger.error("Invalid COM port selection")
-                return
-            baudrate = int(self.baud_dropdown.get())
-            logger.info(f"Connecting to {port} at {baudrate} baud...")
-            self.client = ModbusSerialClient(port=port, baudrate=baudrate, stopbits=1, bytesize=8, parity='N')
-        else:
-            try:
-                tcp_port = int(self.tcp_port_entry.get())
-            except ValueError:
-                logger.error("Invalid TCP port")
-                return
-            host = self.ip_entry.get()
-            logger.info(f"Connecting to {host}:{tcp_port}...")
-            self.client = ModbusTcpClient(host, tcp_port)
-
-        # Attempt to connect
-        if not self.client.connect():
-            self.disconnect()
-            self.button_connect.configure(state="normal")
-            self.button_disconnect.configure(state="disabled")
-            logger.info("Could not connect to Modbus device")
-            return
-
-        # Test connection with a read request
-        serial = self.client.read_holding_registers(80, count=1, slave=self.slave)
-        if isinstance(serial, ModbusIOException) or serial is None or not hasattr(serial, 'registers'):
-            self.disconnect()
-            self.button_connect.configure(state="normal")
-            self.button_disconnect.configure(state="disabled")
-            logger.info("Could not communicate with Modbus device")
-            return
-
-        # Prevent unnecessary overwriting of UI values
-        for key, entry in self.variables.items():
-            if entry['reg_type'] == "COIL":
-                coils = self.client.read_coils(entry["address"], slave=self.slave)
-                if coils and hasattr(coils, "bits"):
-                    modbus_value = bool(coils.bits[0])  # Convert to boolean
-                    current_value = entry['var'].get()  # Get UI checkbox value
-                    if modbus_value != current_value:
-                        entry['var'].set(modbus_value)  # Only update if different
-            
-            elif entry['reg_type'] == "HREG":
-                hregs = self.client.read_holding_registers(entry["address"], count=1, slave=self.slave)
-                if hregs and hasattr(hregs, "registers"):
-                    modbus_value = hregs.registers[0]
-                    current_value = entry['var'].get()
-                    if str(modbus_value) != current_value:  # Prevent unnecessary updates
-                        entry['var'].set(str(modbus_value))
-            
-            elif entry['reg_type'] == "IREG":
-                iregs = self.client.read_input_registers(entry["address"], count=1, slave=self.slave)
-                if iregs and hasattr(iregs, "registers"):
-                    modbus_value = iregs.registers[0]
-                    current_value = entry['var'].get()
-                    if str(modbus_value) != current_value:  # Prevent unnecessary updates
-                        entry['var'].set(str(modbus_value))
-
-        # Enable UI elements after connection is established
-        self.enable_all(True)
-        self.status_lbl.configure(text="Status: CONNECTED")
-        self.button_connect.configure(state="disabled")
-        self.button_disconnect.configure(state="normal")
-        self.connecting = False
-
     # Connect
     def connect(self):
         
@@ -443,15 +359,6 @@ class App(ctk.CTk):
     def update(self):
         while True:
             
-            # # Update COM port list
-            # new_com_ports = {}
-            # for port in list_ports.comports():
-            #     if os.name == "posix": self.com_ports[port.device] = port.description
-            #     else: self.com_ports[port.description] = port.device
-            # if self.com_ports != new_com_ports:
-            #     self.com_ports = new_com_ports
-            #     self.com_dropdown.configure(values=list(self.com_ports.keys()))
-                
             # Update parameters
             if not self.connecting and self.client and self.client.connected:
                 for var in self.variables:
@@ -465,45 +372,6 @@ class App(ctk.CTk):
             
             time.sleep(2)
             
-    def update_gui(self, key):
-        """Updates a specific variable in the GUI only when needed."""
-        
-        if not self.client or not self.client.connected:
-            logger.info(f"Not connected, skipping update for {key}")
-            return
-        
-        try:
-            address = self.variables[key]['address']
-            reg_type = self.variables[key]['reg_type']
-            current_value = self.variables[key]['var'].get()  # Value in the UI
-            
-            new_value = None
-            
-            if reg_type == 'COIL':
-                coils = self.client.read_coils(address, slave=self.slave)
-                if coils and hasattr(coils, "bits"):
-                    new_value = bool(coils.bits[0])
-            
-            elif reg_type == 'HREG':
-                hregs = self.client.read_holding_registers(address, count=1, slave=self.slave)
-                if hregs and hasattr(hregs, "registers"):
-                    new_value = hregs.registers[0]
-            
-            elif reg_type == 'IREG':
-                iregs = self.client.read_input_registers(address, count=1, slave=self.slave)
-                if iregs and hasattr(iregs, "registers"):
-                    new_value = iregs.registers[0]
-            
-            # ✅ Only update UI if the value actually changed
-            if new_value is not None and str(new_value) != str(current_value):
-                logger.info(f"Updating {key}: {current_value} → {new_value}")
-                self.variables[key]['var'].set(new_value)
-            else:
-                logger.info(f"No change for {key}, skipping update.")
-
-        except Exception as e:
-            logger.error(f"Error updating {key}: {e}")
-
     # Update function
     def update_once(self):
         if not self.connecting and self.client and self.client.connected:
@@ -653,9 +521,6 @@ class App(ctk.CTk):
             except Exception as e:
                 logger.error(f"Failed to write {value} to {reg_type} at x{address:02d}: {e}")
 
-    # Set key of focused element on focus
-    def set_selected(self, key):
-        self.selected = key
     
     def read_register(self, key):
         """Reads values from Modbus registers and updates the GUI elements."""
@@ -750,43 +615,10 @@ class App(ctk.CTk):
                 self.client.write_register(address=self.variables[key]['address'], value=val, slave=self.slave)
                 logger.info(f"Wrote {val} to HREG {self.variables[key]['address']}")
 
-            # Prevent immediate overwrite by ensuring update_gui() doesn't override it
             self.variables[key]['var'].set(val)
 
         except Exception as e:
             logger.error(f"Error writing {val} to {key}: {e}")
-
-    def write_register_old(self, key):
-        # If updating from read, skip the write
-        if self.updating_from_read:
-            return
-        
-        # Only try writing if connected
-        if (self.client and self.client.connected and self.variables[key]['tab'] == self.tab_view.get()):
-            
-            # Get value and check if it is numeric
-            val = self.variables[key]['element'].get()
-            
-            try:
-                val = float(val) if self.variables[key]['reg_type'] != "COIL" else bool(int(val)) # Convert properly
-            except:
-                logger.error("Invalid input for " + key)
-                return
-            
-            # Write to register
-            if self.variables[key]['reg_type'] == 'COIL':
-                self.client.write_coil(address=self.variables[key]['address'], value=val, slave=self.slave)        
-                self.variables[key]['var'].set(val)  # ✅ Explicitly update checkbox state
-            
-            elif self.variables[key]['reg_type'] == 'HREG' and self.variables[key]['data_type'] == 'FLOAT':
-                builder = BinaryPayloadBuilder(byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-                builder.add_32bit_float(val)
-                payload = builder.to_registers()
-                self.client.write_registers(self.variables[key]['address'], payload, self.slave)
-            
-            elif self.variables[key]['reg_type'] == 'HREG':
-                value = val + (self.variables[key]['data_type'] == "INT" and val < 0) * 65536
-                self.client.write_register(self.variables[key]['address'], int(round(value)), self.slave)
 
     # Close window and stop script when closing
     def on_closing(self):
