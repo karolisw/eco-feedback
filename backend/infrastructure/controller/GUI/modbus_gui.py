@@ -131,7 +131,7 @@ class App(ctk.CTk):
         self.variables = {}
         
         # Read CSV data
-        self.data = self.read_csv('./user_saved_settings.csv')
+        self.data = self.read_csv('./modbus_config/config_1.csv')
 
         # Process and create tabs
         self.create_tabs(self.data)
