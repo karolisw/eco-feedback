@@ -1,3 +1,4 @@
+import logging
 import os
 import csv
 import numpy as np
@@ -11,6 +12,9 @@ from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.client.mixin import ModbusClientMixin
+
+logger = logging.getLogger("modbus")
+logging.basicConfig(level=logging.INFO)
 
 # Maximum number of rows
 max_rows = 12
@@ -78,7 +82,6 @@ class App(ctk.CTk):
         elif len(self.com_ports.keys()) != 0: self.com_dropdown.set(list(self.com_ports.keys())[0])
         self.com_dropdown.grid(column=3, row=0, sticky='w', padx=10, pady=(10, 5))
         
-        print(self.com_ports)
         # Baud rate
         lbl = ctk.CTkLabel(frame, text="Baud Rate:")
         lbl.grid(column=2, row=1, sticky='e', padx=(25, 10))
@@ -101,23 +104,23 @@ class App(ctk.CTk):
         self.button_connect.grid(column=4, row=0, sticky='w', padx=10, pady=(10, 5))
         self.button_disconnect = ctk.CTkButton(frame, text="Disconnect", command=self.disconnect, state="disabled")
         self.button_disconnect.grid(column=4, row=1, sticky='w', padx=10, pady=5)
-        # self.button_read = ctk.CTkButton(frame, text="Read", command=self.update_once, state="disabled")
-        # self.button_read.grid(column=4, row=2, sticky='w', padx=10, pady=5)
         self.status_lbl = ctk.CTkLabel(frame, text="Status: DISCONNECTED")
         self.status_lbl.grid(column=4, row=2, sticky='w', padx=10, pady=(0, 5))
         
         # Update input field states
         self.update_mb_type()
         
+        # Input field for name of config file to save
+        lbl = ctk.CTkLabel(frame, text="Config Name:")
+        lbl.grid(column=2, row=3, sticky='e', padx=(10, 5), pady=5)
+        self.filename_var = ctk.StringVar(value="config_1")  # Default name
+        self.filename_entry = ctk.CTkEntry(frame, textvariable=self.filename_var, width=140)
+        self.filename_entry.grid(column=3, row=3, sticky='w', padx=(5, 10), pady=5)
+
         # Add Save Button to GUI
         self.button_save = ctk.CTkButton(frame, text="Save", command=self.save_settings)
         self.button_save.grid(column=4, row=3, sticky='w', padx=10, pady=(10, 5))
-        """
-        # Save Button 
-        self.button_save = ctk.CTkButton(frame, text="Save", command=self.save_register_values)
-        self.button_save.grid(column=4, row=3, sticky='w', padx=10, pady=(10, 5))  # Adjusted position
-        """
-        
+
         # Create tab view
         self.tab_view = ctk.CTkTabview(self, command=self.update_once, height=0)
         self.tab_view.pack(padx=20, pady=(10, 20), ipadx=15, ipady=6)
@@ -128,9 +131,7 @@ class App(ctk.CTk):
         self.variables = {}
         
         # Read CSV data
-        #self.data = self.read_csv('./Interfacing Overview - Export.csv')
         self.data = self.read_csv('./user_saved_settings.csv')
-        #self.data = self.read_csv("./config_files/V1_5_default.csv")
 
         # Process and create tabs
         self.create_tabs(self.data)
@@ -140,9 +141,61 @@ class App(ctk.CTk):
         self.update_thread.daemon = True
         self.update_thread.start()
         
+    def ask_replace_file(self, filename):
+        """Asks the user if they want to replace an existing configuration file."""
+        
+        popup = ctk.CTkToplevel(self)
+        popup.title("Confirm Overwrite")
+        popup.geometry("350x150")
+
+        lbl = ctk.CTkLabel(popup, text=f"A file named '{filename}.csv' already exists.\nDo you want to replace it?", wraplength=320)
+        lbl.pack(pady=15)
+
+        decision = ctk.BooleanVar(value=False)
+
+        def yes_action():
+            decision.set(True)
+            popup.destroy()
+
+        def no_action():
+            decision.set(False)
+            popup.destroy()
+
+        btn_yes = ctk.CTkButton(popup, text="Yes", command=yes_action)
+        btn_yes.pack(side="left", expand=True, padx=10, pady=10)
+
+        btn_no = ctk.CTkButton(popup, text="No", command=no_action)
+        btn_no.pack(side="right", expand=True, padx=10, pady=10)
+
+        popup.wait_window()  # Wait for user input
+        return decision.get()
+        
     def save_settings(self):
         """Saves the current GUI settings to a CSV file."""
-        filename = "user_saved_settings.csv"  # Define the output CSV file
+        #filename = "user_saved_settings.csv"  # Define the output CSV file
+        
+        # Get the filename from the user input
+        config_name = self.filename_var.get().strip()
+        
+        # Ensure a valid filename is provided
+        if not config_name:
+            logger.info("File name cannot be empty.")
+            return
+        
+        # Ensure the folder exists
+        save_dir = "./modbus_config"
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Define the full file path
+        filename = os.path.join(save_dir, f"{config_name}.csv")
+        
+        # Check if the file already exists
+        if os.path.exists(filename):
+            should_replace = self.ask_replace_file(config_name)
+            if not should_replace:
+                logger.info("File not saved. User chose not to overwrite.")
+                return
+        
 
         try:
             with open(filename, mode="w", newline="") as file:
@@ -157,7 +210,6 @@ class App(ctk.CTk):
                 # Define the allowed IREG addresses that should be included
                 allowed_ireg_addresses = {100, 102, 104, 106 }#, 200, 202, 204, 206}
 
-                
                 # Iterate through variables to save their current values
                 for key, entry in self.variables.items():
                     
@@ -219,91 +271,11 @@ class App(ctk.CTk):
                         "1",  # SECTION_INDEX (default to 1)
                     ])
 
-            print(f"✅ Settings saved to {filename}")
+            logger.info(f"Settings saved to {filename}")
 
         except Exception as e:
-            print(f"❌ Error saving settings: {e}")
+            logger.error(f"Error saving settings: {e}")
       
-    def save_register_values2(self):
-        """Saves the current register values to a properly formatted CSV file."""
-        save_dir = "./csv"
-        save_path = os.path.join(save_dir, "configuration_1.csv")
-
-        # Ensure the directory exists
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
-        # Define column headers
-        headers = [
-            "SECTION", "NAME", "REG", "ADD", "CAN", "R-ONLY", "TYPE", "GEN", "AX1", "AX2",
-            "DEF", "MIN", "MAX", "UNIT", "PER", "SECURE", "DEV", "SECTION_INDEX"
-        ]
-
-        # Extract and organize data
-        data = [headers]
-
-        # Mapping of registers to sections
-        section_map = {
-            "COIL": "Functions and sensors",
-            "HREG": "Functions and sensors",
-            "IREG": "Functions and sensors",
-        }
-
-        # Section index mapping
-        section_index_map = {
-            "Functions and sensors": 1,
-            "LED settings": 2,
-            "Boundary settings": 3,
-            "Detent settings": 4,
-            "Startup settings": 5,
-        }
-
-        for key, reg_info in self.variables.items():
-            reg_type = reg_info["reg_type"]
-            address = reg_info["address"]
-
-            # Convert address to proper hexadecimal format (x00, x01, x02, ...)
-            hex_address = f"x{address:02X}"
-
-            # Retrieve value from GUI
-            value = reg_info["var"].get()
-
-            # Determine the correct section
-            section = section_map.get(reg_type, "Unknown")
-            section_index = section_index_map.get(section, "")
-
-            # Build row according to required CSV format
-            row = [
-                section,        # SECTION
-                key,            # NAME (Register key)
-                reg_type,       # REG (COIL, HREG, IREG)
-                hex_address,    # ADD (Hexadecimal representation)
-                "",             # CAN (Empty by default)
-                "X" if reg_info.get("read_only", False) else "",  # R-ONLY
-                reg_info["data_type"],  # TYPE
-                "X" if reg_info.get("is_general", False) else "", # GEN
-                "X" if reg_info.get("is_axial", False) else "",   # AX1
-                "",             # AX2 (Left empty)
-                value,          # DEF (Default value, current value)
-                reg_info.get("min", ""),  # MIN
-                reg_info.get("max", ""),  # MAX
-                reg_info.get("unit", ""), # UNIT
-                "X" if reg_info.get("persistent", False) else "", # PER
-                "",             # SECURE (Left empty)
-                "",             # DEV (Left empty)
-                section_index,  # SECTION_INDEX
-            ]
-
-            data.append(row)
-
-        # Write data to CSV
-        try:
-            with open(save_path, "w", newline="") as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerows(data)
-            print(f"[INFO] Configuration saved successfully to {save_path}")
-        except Exception as e:
-            print(f"[ERROR] Could not save configuration: {e}")
     
     def connect_fail(self):
         """Connects to the Modbus device and prevents overwriting the UI state unnecessarily."""
@@ -319,23 +291,23 @@ class App(ctk.CTk):
             try:
                 self.slave = int(self.slave_entry.get())
             except ValueError:
-                print("Invalid slave address")
+                logger.error("Invalid slave address")
                 return
             port = self.com_ports.get(self.com_dropdown.get(), None)
             if not port:
-                print("Invalid COM port selection")
+                logger.error("Invalid COM port selection")
                 return
             baudrate = int(self.baud_dropdown.get())
-            print(f"Connecting to {port} at {baudrate} baud...")
+            logger.info(f"Connecting to {port} at {baudrate} baud...")
             self.client = ModbusSerialClient(port=port, baudrate=baudrate, stopbits=1, bytesize=8, parity='N')
         else:
             try:
                 tcp_port = int(self.tcp_port_entry.get())
             except ValueError:
-                print("Invalid TCP port")
+                logger.error("Invalid TCP port")
                 return
             host = self.ip_entry.get()
-            print(f"Connecting to {host}:{tcp_port}...")
+            logger.info(f"Connecting to {host}:{tcp_port}...")
             self.client = ModbusTcpClient(host, tcp_port)
 
         # Attempt to connect
@@ -343,7 +315,7 @@ class App(ctk.CTk):
             self.disconnect()
             self.button_connect.configure(state="normal")
             self.button_disconnect.configure(state="disabled")
-            print("Could not connect to Modbus device")
+            logger.info("Could not connect to Modbus device")
             return
 
         # Test connection with a read request
@@ -352,7 +324,7 @@ class App(ctk.CTk):
             self.disconnect()
             self.button_connect.configure(state="normal")
             self.button_disconnect.configure(state="disabled")
-            print("Could not communicate with Modbus device")
+            logger.info("Could not communicate with Modbus device")
             return
 
         # Prevent unnecessary overwriting of UI values
@@ -404,20 +376,17 @@ class App(ctk.CTk):
             try:
                 self.slave = int(self.slave_entry.get())
             except:
-                print("Invalid slave address")
+                logger.error("Invalid slave address")
                 return
             port = self.com_ports[self.com_dropdown.get()]
-            print(self.com_dropdown.get())
-            print(self.com_ports)
             baudrate = int(self.baud_dropdown.get())
-            print("the port is: ", port)
             self.client = ModbusSerialClient(port=port, baudrate=baudrate, stopbits=1, bytesize=8, parity='N')
         else:
             # Get slave address and check if it is numeric
             try:
                 tcp_port = int(self.tcp_port_entry.get())
             except:
-                print("Invalid TCP port")
+                logger.error("Invalid TCP port")
                 return
             host = self.ip_entry.get()
             self.client = ModbusTcpClient(host, tcp_port)
@@ -426,7 +395,6 @@ class App(ctk.CTk):
         # Connect to modbus
         self.client.connect()
         # Write the CSV values to Modbus registers to prevent UI reset
-        print("writing initial registers")
         self.write_initial_registers()
         
         serial = self.client.read_holding_registers(80, count=1, slave=self.slave)
@@ -434,7 +402,7 @@ class App(ctk.CTk):
             self.disconnect()
             self.button_connect.configure(state="normal")
             self.button_disconnect.configure(state="disabled")
-            print("Could not connect")
+            logger.error("Could not connect")
         else:
             self.enable_all(True)
             self.status_lbl.configure(text="Status: CONNECTED")
@@ -470,30 +438,6 @@ class App(ctk.CTk):
             self.com_dropdown.configure(state="disabled")
             self.baud_dropdown.configure(state="disabled")
             self.slave_entry.configure(state="disabled")            
-    
-    def update2(self):
-        while True:
-            if not self.connecting and self.client and self.client.connected:
-                for var in self.variables:
-                    if self.variables[var]['tab'] == self.tab_view.get() and var != self.selected:
-                        try:
-                            modbus_value = self.read_register(var)
-                            current_value = self.variables[var]['var'].get()
-                            print("modbus value: ", modbus_value)
-
-                            # Only update UI if Modbus returns a new value
-                            if str(modbus_value) != str(current_value):
-                                print(f"Updating {var}: {current_value} → {modbus_value}")
-                                self.variables[var]['var'].set(modbus_value)
-                            else:
-                                print(f"Skipping {var}: {current_value} (No change)")
-
-                            time.sleep(0.1)  # Reduce CPU usage
-                        except:
-                            print("Connection lost")
-                            self.disconnect()
-
-            time.sleep(2)  # Keep the update loop interval reasonable
 
     # Update function
     def update(self):
@@ -513,11 +457,10 @@ class App(ctk.CTk):
                 for var in self.variables:
                     if self.variables[var]['tab'] == self.tab_view.get() and var != self.selected:
                         try:
-                            #print("updating")
                             self.read_register(var)
                             time.sleep(0.1)
                         except:
-                            print("Connection lost")
+                            logger.error("Connection lost")
                             self.disconnect()
             
             time.sleep(2)
@@ -526,7 +469,7 @@ class App(ctk.CTk):
         """Updates a specific variable in the GUI only when needed."""
         
         if not self.client or not self.client.connected:
-            print(f"❌ Not connected, skipping update for {key}")
+            logger.info(f"Not connected, skipping update for {key}")
             return
         
         try:
@@ -553,13 +496,13 @@ class App(ctk.CTk):
             
             # ✅ Only update UI if the value actually changed
             if new_value is not None and str(new_value) != str(current_value):
-                print(f"🔄 Updating {key}: {current_value} → {new_value}")
+                logger.info(f"Updating {key}: {current_value} → {new_value}")
                 self.variables[key]['var'].set(new_value)
             else:
-                print(f"✅ No change for {key}, skipping update.")
+                logger.info(f"No change for {key}, skipping update.")
 
         except Exception as e:
-            print(f"❌ Error updating {key}: {e}")
+            logger.error(f"Error updating {key}: {e}")
 
     # Update function
     def update_once(self):
@@ -569,7 +512,7 @@ class App(ctk.CTk):
                     try:
                         self.read_register(var)
                     except:
-                        print("Connection lost")
+                        logger.info("Connection lost")
                         self.disconnect()
     
     # Change enable/disable
@@ -584,7 +527,7 @@ class App(ctk.CTk):
             data = np.genfromtxt(filename, delimiter=',', dtype='str', skip_header=1)
             return data
         except Exception as e:
-            print("Failed to read the CSV file: {}".format(e))
+            logger.error("Failed to read the CSV file: {}".format(e))
             sys.exit()
     
     def create_tabs(self, data):
@@ -641,7 +584,7 @@ class App(ctk.CTk):
                             key = reg_type + '_' + str(int(address) + 100 * offset)
 
                             if key in self.variables:
-                                print("Duplicate key detected:", key)
+                                logger.info("Duplicate key detected:", key)
                                 return
 
                             # Convert DEF values properly
@@ -685,10 +628,10 @@ class App(ctk.CTk):
     def write_initial_registers(self):
         """Writes all initial values from the CSV to the Modbus registers to prevent resets."""
         if not self.client or not self.client.connected:
-            print("Not connected to Modbus. Skipping initial write.")
+            logger.info("Not connected to Modbus. Skipping initial write.")
             return
 
-        print("Writing initial values to Modbus...")
+        logger.info("Writing initial values to Modbus...")
 
         for key, entry in self.variables.items():
             address = entry["address"]
@@ -700,15 +643,15 @@ class App(ctk.CTk):
                     self.client.write_coil(address, bool(value))  # Convert 0/1 to True/False
                 elif reg_type == "HREG":
                     if entry["data_type"] == "FLOAT":
-                        self.client.write_registers(address, self.client.convert_to_registers(float(value), float))
+                        self.client.write_registers(address=address, values=self.client.convert_to_registers(float(value)))
                     else:
-                        self.client.write_register(address, int(value))
+                        self.client.write_register(address=address, value=int(value))
                 elif reg_type == "IREG":
                     # IREGs are read-only, so we don't write to them
                     continue
-                print(f"✔ Wrote {value} to {reg_type} at x{address:02d}")
+                logger.info(f"Wrote {value} to {reg_type} at x{address:02d}")
             except Exception as e:
-                print(f"⚠ Failed to write {value} to {reg_type} at x{address:02d}: {e}")
+                logger.error(f"Failed to write {value} to {reg_type} at x{address:02d}: {e}")
 
     # Set key of focused element on focus
     def set_selected(self, key):
@@ -731,21 +674,21 @@ class App(ctk.CTk):
                 if reg_type == 'COIL':
                     coils = self.client.read_coils(address, slave=self.slave)
                     if coils.isError():
-                        print(f"Error reading COIL {address}")
+                        logger.error(f"Error reading COIL {address}")
                     else:
                         new_value = coils.bits[0]
 
                 elif reg_type == 'ISTS':
                     istss = self.client.read_discrete_inputs(address, slave=self.slave)
                     if istss.isError():
-                        print(f"Error reading ISTS {address}")
+                        logger.error(f"Error reading ISTS {address}")
                     else:
                         new_value = istss.bits[0]
 
                 elif reg_type == 'HREG' and data_type == 'FLOAT':
                     hregs = self.client.read_holding_registers(address, count=2, slave=self.slave)
                     if hregs.isError():
-                        print(f"Error reading HREG (FLOAT) {address}")
+                        logger.error(f"Error reading HREG (FLOAT) {address}")
                     else:
                         value = self.client.convert_from_registers(hregs.registers, float, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
                         new_value = str(round(value, 3))
@@ -753,7 +696,7 @@ class App(ctk.CTk):
                 elif reg_type == 'HREG':
                     hregs = self.client.read_holding_registers(address, count=1, slave=self.slave)
                     if hregs.isError():
-                        print(f"Error reading HREG {address}")
+                        logger.error(f"Error reading HREG {address}")
                     else:
                         value = hregs.registers[0] - (data_type == "INT" and hregs.registers[0] > 32767) * 65536
                         new_value = str(round(value, 3))
@@ -761,7 +704,7 @@ class App(ctk.CTk):
                 elif reg_type == 'IREG' and data_type == 'FLOAT':
                     iregs = self.client.read_input_registers(address, count=2, slave=self.slave)
                     if iregs.isError():
-                        print(f"Error reading IREG (FLOAT) {address}")
+                        logger.error(f"Error reading IREG (FLOAT) {address}")
                     else: 
                         value = self.client.convert_from_registers(iregs.registers, self.DATATYPE.FLOAT32, word_order="little")
                         new_value = str(round(value, 3))
@@ -769,7 +712,7 @@ class App(ctk.CTk):
                 elif reg_type == 'IREG':
                     iregs = self.client.read_input_registers(address, count=1, slave=self.slave)
                     if iregs.isError():
-                        print(f"Error reading IREG {address}")
+                        logger.error(f"Error reading IREG {address}")
                     else:
                         value = iregs.registers[0] - (data_type == "INT" and iregs.registers[0] > 32767) * 65536
                         new_value = str(round(value, 3))
@@ -780,82 +723,38 @@ class App(ctk.CTk):
                 return new_value
 
             except Exception as e:
-                print(f"Could not read {reg_type} {address}: {str(e)}")
+                logger.error(f"Could not read {reg_type} {address}: {str(e)}")
             finally:
                 self.updating_from_read = False
 
-    # Read variable from register
-    def read_register2(self, key):
-        
-        # Only try reading if connected
-        if self.client and self.client.connected:
-    
-            # Read from register
-            self.updating_from_read = True
-            
-            try:
-                new_value = None  # Initialize to None to represent no new value yet
-                
-                if self.variables[key]['reg_type'] == 'COIL':
-                    coils = self.client.read_coils(self.variables[key]['address'], slave=self.slave)
-                    new_value = coils.bits[0]
-                elif self.variables[key]['reg_type'] == 'ISTS':
-                    istss = self.client.read_discrete_inputs(self.variables[key]['address'], slave=self.slave)
-                    new_value = istss.bits[0]
-                elif self.variables[key]['reg_type'] == 'HREG' and self.variables[key]['data_type'] == 'FLOAT':
-                    hregs = self.client.read_holding_registers(self.variables[key]['address'], count=2, slave=self.slave)
-                    decoder = BinaryPayloadDecoder.fromRegisters(hregs.registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-                    value = decoder.decode_32bit_float()
-                    new_value = str(round(value, 3))
-                elif self.variables[key]['reg_type'] == 'HREG':
-                    hregs = self.client.read_holding_registers(self.variables[key]['address'], count=1, slave=self.slave)
-                    value = hregs.registers[0] - (self.variables[key]['data_type'] == "INT" and hregs.registers[0] > 32767) * 65536
-                    new_value = str(round(value, 3))
-                elif self.variables[key]['reg_type'] == 'IREG' and self.variables[key]['data_type'] == 'FLOAT':
-                    #print("self.variables[key]['address']: ", self.variables[key]['address'])           
-                    iregs = self.client.read_input_registers(self.variables[key]['address'], count=2, slave=self.slave)
-                    decoder = BinaryPayloadDecoder.fromRegisters(iregs.registers, byteorder=Endian.BIG, wordorder=Endian.LITTLE)
-                    value = decoder.decode_32bit_float()
-                    new_value = str(round(value, 3))
-                    print("the value is: ", new_value)
-                elif self.variables[key]['reg_type'] == 'IREG':     
-                    iregs = self.client.read_input_registers(self.variables[key]['address'], count=1, slave=self.slave)
-                    value = iregs.registers[0] - (self.variables[key]['data_type'] == "INT" and iregs.registers[0] > 32767) * 65536
-                    new_value = str(round(value, 3))
-                    
-                # Check if the new value is different from the current value and update if so
-                if new_value is not None and new_value != self.variables[key]['var'].get():
-                    self.variables[key]['var'].set(new_value)
-            except Exception as e:
-                print(f"Could not read {self.variables[key]['reg_type']} {self.variables[key]['address']}: {str(e)}")
-            finally:
-                self.updating_from_read = False
 
     def write_register(self, key):
         """Writes user changes to Modbus without overriding UI input."""
         
         if not self.client or not self.client.connected:
-            print(f"⚠ Not connected, skipping write for {key}")
+            logger.info(f"Not connected, skipping write for {key}")
             return
 
         val = self.variables[key]['var'].get()
+        if (val == ""):
+            return
 
         try:
             if self.variables[key]['reg_type'] == "COIL":
                 val = bool(int(val))
                 self.client.write_coil(address=self.variables[key]['address'], value=val, slave=self.slave)
-                print(f"✔ Wrote {val} to COIL {self.variables[key]['address']}")
+                logger.info(f"Wrote {val} to COIL {self.variables[key]['address']}")
 
             elif self.variables[key]['reg_type'] == "HREG":
                 val = int(val)
-                self.client.write_register(self.variables[key]['address'], val, self.slave)
-                print(f"✔ Wrote {val} to HREG {self.variables[key]['address']}")
+                self.client.write_register(address=self.variables[key]['address'], value=val, slave=self.slave)
+                logger.info(f"Wrote {val} to HREG {self.variables[key]['address']}")
 
-            # ✅ Prevent immediate overwrite by ensuring update_gui() doesn't override it
+            # Prevent immediate overwrite by ensuring update_gui() doesn't override it
             self.variables[key]['var'].set(val)
 
         except Exception as e:
-            print(f"⚠ Error writing {val} to {key}: {e}")
+            logger.error(f"Error writing {val} to {key}: {e}")
 
     def write_register_old(self, key):
         # If updating from read, skip the write
@@ -871,7 +770,7 @@ class App(ctk.CTk):
             try:
                 val = float(val) if self.variables[key]['reg_type'] != "COIL" else bool(int(val)) # Convert properly
             except:
-                print("Invalid input for " + key)
+                logger.error("Invalid input for " + key)
                 return
             
             # Write to register
@@ -892,7 +791,7 @@ class App(ctk.CTk):
     # Close window and stop script when closing
     def on_closing(self):
         if self.client:
-            print("[INFO] Releasing COM3 before exit...")
+            logger.info("Releasing COM3 before exit...")
             self.client.close()
             self.client = None
         self.disconnect()
@@ -900,11 +799,5 @@ class App(ctk.CTk):
         sys.exit()
 
 # Start and run the app
-# try:
 app = App()
 app.mainloop()
-# except Exception as e:
-#     print("\n" + 26*"-" + " ERROR " + 26*"-")
-#     print("Something went wrong: {}".format(e))
-#     input("Press any button to close...")
-#     sys.exit()
