@@ -32,7 +32,8 @@ export function Dashboard() {
           thrust={data.currentThrust}
           setPoint={10}
           touching={true}
-          atSetpoint={false}
+          atThrustSetpoint={false}
+          atAngleSetpoint={false}
         />
         <Rudder angle={data.currentAngle} />
         <Emissions

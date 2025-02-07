@@ -1,26 +1,30 @@
-import { ObcThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/thruster/thruster'
+//import { ObcThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/thruster/thruster'
+import { ObcAzimuthThrusterLabeled } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster-labeled/azimuth-thruster-labeled'
 
 type ThrusterProps = {
   thrust: number //  The thrust of the thruster in percent (0-100)
   setPoint: number | undefined // The setpoint of the thruster in percent (0-100)
   touching: boolean // Whether the thruster is being touched by the operator'
-  atSetpoint: boolean // Whether the thruster is at the setpoint
+  atThrustSetpoint: boolean // Whether the thruster is at the setpoint
+  atAngleSetpoint: boolean // Whether the angle is at the setpoint
 }
 
 export function Thruster({
   thrust,
   setPoint,
-  atSetpoint,
-  touching
+  touching,
+  atThrustSetpoint,
+  atAngleSetpoint
 }: ThrusterProps) {
   return (
     <div>
-      <ObcThruster
+      <ObcAzimuthThrusterLabeled
         thrust={thrust}
-        setpoint={setPoint}
+        thrustSetpoint={setPoint}
         touching={touching}
-        atSetpoint={atSetpoint}
-      ></ObcThruster>
+        atThrustSetpoint={atThrustSetpoint}
+        atAngleSetpoint={atAngleSetpoint}
+      ></ObcAzimuthThrusterLabeled>
     </div>
   )
 }
