@@ -19,6 +19,9 @@ logging.basicConfig(level=logging.INFO)
 # Maximum number of rows
 max_rows = 12
 
+# Config directory
+CONFIG_DIR = "./modbus_config/"
+
 # Setup customtkinter
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
@@ -29,7 +32,7 @@ class App(ctk.CTk):
         
         # Set up window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.title("Smart-Ship - Handle Configuration")
+        self.title("Controller Configuration")
         self.title_font = ctk.CTkFont(size=16, weight="bold", underline=True)
         self.DATATYPE = ModbusClientMixin.DATATYPE
         
@@ -41,7 +44,7 @@ class App(ctk.CTk):
         # Frame for app settings
         frame = ctk.CTkFrame(self)
         frame.pack(padx=20, pady=(20, 5), ipadx=15, ipady=5)
-        
+              
         # Modbus type
         lbl = ctk.CTkLabel(frame, text="Type:")
         lbl.grid(column=0, row=0, sticky='e', padx=(25, 10), pady=(5, 0))
@@ -110,16 +113,23 @@ class App(ctk.CTk):
         # Update input field states
         self.update_mb_type()
         
+        # Dropdown containing possible startup configurations
+        ctk.CTkLabel(frame, text="Startup Config:").grid(column=2, row=3, sticky='e', padx=(10, 5), pady=5)
+        self.config_files = self.get_config_files()
+        self.selected_config = ctk.StringVar(value=self.config_files[0] if self.config_files else "")
+        self.config_dropdown = ctk.CTkComboBox(frame, values=self.config_files, variable=self.selected_config, command=self.load_selected_config)
+        self.config_dropdown.grid(column=3, row=3, sticky='w', padx=(5, 10), pady=5)
+        
         # Input field for name of config file to save
-        lbl = ctk.CTkLabel(frame, text="Config Name:")
-        lbl.grid(column=2, row=3, sticky='e', padx=(10, 5), pady=5)
+        lbl = ctk.CTkLabel(frame, text="Save config as:")
+        lbl.grid(column=2, row=4, sticky='e', padx=(10, 5), pady=5)
         self.filename_var = ctk.StringVar(value="config_1")  # Default name
         self.filename_entry = ctk.CTkEntry(frame, textvariable=self.filename_var, width=140)
-        self.filename_entry.grid(column=3, row=3, sticky='w', padx=(5, 10), pady=5)
+        self.filename_entry.grid(column=3, row=4, sticky='w', padx=(5, 10), pady=5)
 
         # Add Save Button to GUI
         self.button_save = ctk.CTkButton(frame, text="Save", command=self.save_settings)
-        self.button_save.grid(column=4, row=3, sticky='w', padx=10, pady=(10, 5))
+        self.button_save.grid(column=4, row=4, sticky='w', padx=10, pady=(10, 5))
 
         # Create tab view
         self.tab_view = ctk.CTkTabview(self, command=self.update_once, height=0)
@@ -130,9 +140,10 @@ class App(ctk.CTk):
         self.slave = 1
         self.variables = {}
         
-        # Read CSV data
-        self.data = self.read_csv('./modbus_config/config_1.csv')
-
+        # Using the first config file in the list as data for create_tabs(data)
+        first_config_file = CONFIG_DIR +  self.get_config_files()[0]
+        self.data = self.read_csv(first_config_file)
+        
         # Process and create tabs
         self.create_tabs(self.data)
         
@@ -169,6 +180,16 @@ class App(ctk.CTk):
 
         popup.wait_window()  # Wait for user input
         return decision.get()
+    
+    def update_config_dropdown(self):
+        """Updates the dropdown menu with the latest configuration files."""
+        self.config_files = self.get_config_files()  # Refresh the file list
+        self.config_dropdown.configure(values=self.config_files)  # Update dropdown values
+        
+        # Optionally, set the latest file as selected
+        if self.config_files:
+            self.selected_config.set(self.config_files[-1])  # Set the newest file as default
+
         
     def save_settings(self):
         """Saves the current GUI settings to a CSV file."""
@@ -229,13 +250,6 @@ class App(ctk.CTk):
                     # Clean NAME (remove colon `:` at the end and ensure uppercase)
                     name = entry.get("label", "").rstrip(":").upper()
                 
-                     # Skip addresses >= 100 unless they are in the allowed IREG list
-                    #if address >= 100 and (reg_type != "IREG" or address not in allowed_ireg_addresses):
-                    #    continue
-                    
-                    # Adjust IREG addresses to remove offset (e.g., 100 → 0, 102 → 2, etc.)
-                    #formatted_address = f"x{address - 100}" if reg_type == "IREG" and address in allowed_ireg_addresses else f"x{address}"
-
                     # Replace NaN values in MIN and MAX with an empty string
                     min_value = "" if np.isnan(entry.get("min", np.nan)) else entry.get("min", "")
                     max_value = "" if np.isnan(entry.get("max", np.nan)) else entry.get("max", "")
@@ -249,19 +263,13 @@ class App(ctk.CTk):
                         name,  # NAME (formatted)
                         reg_type,  # REG (COIL/HREG/etc.)
                         formatted_address,  # ADD (adjusted for IREG)
-                        #entry.get("label", ""),  # NAME
-                        #entry.get("reg_type", ""),  # REG (COIL/HREG/etc.)
-                        #f"x{entry.get('address', '')}",  # ADD
                         "",  # CAN (empty)
                         "X" if entry.get("read_only", False) else "",  # R-ONLY
                         entry.get("data_type", ""),  # TYPE
                         "X" if entry.get("is_general", False) else "",  # GEN
                         "X" if entry.get("is_axial", False) else "",  # AX1
                         "X" if entry.get("is_axial", False) else "",  # AX2
-                        #entry.get("var").get() if entry.get("var") else "",  # DEF (current value)
-                        def_value,
-                        #entry.get("min", ""),  # MIN
-                        #entry.get("max", ""),  # MAX
+                        def_value, # DEF
                         min_value,  # MIN (empty string if NaN)
                         max_value,  # MAX (empty string if NaN)
                         entry.get("unit", ""),  # UNIT
@@ -272,6 +280,9 @@ class App(ctk.CTk):
                     ])
 
             logger.info(f"Settings saved to {filename}")
+            
+            # Updating the drop down
+            self.update_config_dropdown()
 
         except Exception as e:
             logger.error(f"Error saving settings: {e}")
@@ -385,10 +396,41 @@ class App(ctk.CTk):
     
     # Change enable/disable
     def enable_all(self, enable = True):
+        """Enable or disable UI elements based on the connection state."""
+
         for key in self.variables:
             if not self.variables[key]['reg_type'] in ["ISTS", "IREG"]:
                 self.variables[key]['element'].configure(state="normal" if enable else "disabled")
+                
+        # Disable startup config dropdown when connected
+        self.config_dropdown.configure(state="normal" if not enable else "disabled")
+        
+    def get_config_files(self):
+        """List all CSV configuration files in the modbus_config directory."""
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        return [f for f in os.listdir(CONFIG_DIR) if f.endswith(".csv")]
     
+    def load_selected_config(self, *args):
+        """Loads the selected configuration file and updates the GUI."""
+        selected_file = self.selected_config.get()
+        file_path = os.path.join(CONFIG_DIR, selected_file)
+        
+        if not os.path.exists(file_path):
+            logger.error(f"Configuration file {selected_file} not found.")
+            return
+        
+        self.data = self.read_csv(file_path)
+        logger.info(f"Loaded configuration: {selected_file}")
+        
+        # Get the list of existing tabs and delete them properly
+        self.tab_view.destroy()
+        self.variables.clear()
+        
+        # Create new tabs
+        self.create_tabs(self.data)
+
+        
+
     # Using numpy to read the CSV file
     def read_csv(self, filename):
         try:
@@ -400,7 +442,11 @@ class App(ctk.CTk):
     
     def create_tabs(self, data):
         """Creates tabs and dynamically generates input fields based on the CSV file."""
-
+        
+        # Create new tab view (not a great solution - but it works)
+        self.tab_view = ctk.CTkTabview(self, command=self.update_once, height=0)
+        self.tab_view.pack(padx=20, pady=(10, 20), ipadx=15, ipady=6)
+        
         tabs_data = {}
         for row in data:
             tab_name = row[0].title().replace("_", " ")  # Extract tab name
