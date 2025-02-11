@@ -1,26 +1,16 @@
+// Import thruster from
 import { ObcThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/thruster/thruster'
-
+import '../styles/dashboard.css'
+// Create Thruster and thrust props
 type ThrusterProps = {
   thrust: number //  The thrust of the thruster in percent (0-100)
-  setPoint: number | undefined // The setpoint of the thruster in percent (0-100)
-  touching: boolean // Whether the thruster is being touched by the operator'
-  atSetpoint: boolean // Whether the thruster is at the setpoint
 }
 
-export function Thruster({
-  thrust,
-  setPoint,
-  atSetpoint,
-  touching
-}: ThrusterProps) {
+// Create Thruster component
+export function Thruster({ thrust }: ThrusterProps) {
   return (
-    <div>
-      <ObcThruster
-        thrust={thrust}
-        setpoint={setPoint}
-        touching={touching}
-        atSetpoint={atSetpoint}
-      ></ObcThruster>
+    <div className="dashboard-component">
+      <ObcThruster thrust={thrust}></ObcThruster>
     </div>
   )
 }

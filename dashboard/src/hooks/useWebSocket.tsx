@@ -10,56 +10,60 @@ type DashboardData = {
 
 export function UseWebSocket(url: string, initialData: DashboardData) {
   const [data, setData] = useState<DashboardData>(initialData)
-  // TODO make  webscocket ref 
-  //const ws = useRef<WebSocket | null>(null)
-
+  const ws = useRef<WebSocket | null>(null)
   const latestData = useRef<DashboardData>(initialData)
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isConnected, setIsConnected] = useState<boolean>(false)
 
   useEffect(() => {
-    const socket = new WebSocket(url)
+    if (ws.current) {
+      ws.current.close() // ✅ Close existing WebSocket before creating a new one
+    }
 
-    socket.onopen = () => {
+    ws.current = new WebSocket(url)
+
+    ws.current.onopen = () => {
       setIsConnected(true)
       console.log('WebSocket connection established')
     }
 
-    socket.onmessage = (event) => {
+    ws.current.onmessage = (event) => {
       try {
         const newData: DashboardData = JSON.parse(
           event.data as string
         ) as DashboardData
-        if (isDashboardData(newData) && newData !== latestData.current) {
+        if (
+          isDashboardData(newData) &&
+          hasDataChanged(newData, latestData.current)
+        ) {
+          console.log('Received correctly formatted data')
           latestData.current = newData
-          setData(newData)
-        } else {
-          console.error('Received data is not of type DashboardData', newData)
+          setData(newData) // ✅ React state triggers re-render
         }
       } catch (error) {
         console.error('Error parsing WebSocket message', error)
       }
     }
 
-    socket.onerror = (error) => {
+    ws.current.onerror = (error) => {
       console.error('WebSocket error', error)
     }
 
-    socket.onclose = () => {
+    ws.current.onclose = () => {
       setIsConnected(false)
       console.log('WebSocket connection closed')
     }
 
     return () => {
-      socket.close()
+      ws.current?.close() // ✅ Cleanup WebSocket on component unmount
     }
-  }, [url])
+  }, [url]) // ✅ Depend only on `url` to avoid re-creating unnecessary WebSockets
 
-  function isDashboardData(data: DashboardData | string) {
+  function isDashboardData(
+    data: DashboardData | string
+  ): data is DashboardData {
     return (
-      data &&
       typeof data === 'object' &&
+      data !== null &&
       'currentThrust' in data &&
       'currentAngle' in data &&
       'consumption' in data &&
@@ -68,5 +72,18 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     )
   }
 
-  return data
+  function hasDataChanged(
+    newData: DashboardData,
+    oldData: DashboardData
+  ): boolean {
+    return (
+      newData.currentThrust !== oldData.currentThrust ||
+      newData.currentAngle !== oldData.currentAngle ||
+      newData.consumption !== oldData.consumption ||
+      newData.currentEmissions !== oldData.currentEmissions ||
+      newData.ecoScore !== oldData.ecoScore
+    )
+  }
+
+  return { data, isConnected }
 }
