@@ -1,11 +1,12 @@
 import './App.css'
-import { Routes, Route, Link } from 'react-router-dom'
+//import { Routes, Route, Link } from 'react-router-dom'
 import { Dashboard } from './pages/Dashboard'
 import '@oicl/openbridge-webcomponents/src/palettes/variables.css' //TODO was this correct?
 
 function App() {
   return (
     <div>
+      {/*
       <nav>
         <ul>
           <li>
@@ -16,10 +17,12 @@ function App() {
           </li>
         </ul>
       </nav>
-
+      
       <Routes>
         <Route path="/" element={<Dashboard />} />
       </Routes>
+      */}
+      <Dashboard></Dashboard>
     </div>
   )
 }
