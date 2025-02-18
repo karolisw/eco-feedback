@@ -4,8 +4,22 @@ from infrastructure.websocket.dashboard import app
 from infrastructure.controller.azimuth_controller import controller
 
 async def start_services():
-    """Runs both the AzimuthController and FastAPI WebSocket server in parallel."""
-    await controller.run()
+    """Runs the AzimuthController, but aborts if the connection fails."""
+    print("[INFO] Attempting to start AzimuthController...")
+
+    try:
+        await controller.assign_registers()
+        connected = await controller.connect()  # Ensure connection is established
+        
+        if not connected:
+            print("[ERROR] Failed to connect to Modbus server. Aborting start_services.")
+            return  # Exit function without starting update loop
+        
+        asyncio.create_task(controller.update_data())  # Run update in background
+
+    except Exception as e:
+        print(f"[ERROR] Unexpected error while starting controller: {e}")
+
 
 async def run_server():
     """Starts the FastAPI server with Uvicorn."""
