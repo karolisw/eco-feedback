@@ -204,7 +204,7 @@ class AzimuthController:
         print("[INFO] Assigning registers...")
         self.assign_registers()
         await self.connect()  # Ensure connection is established
-        asyncio.create_task(self.update_data())  # Run update in background #TODO why asyncio.create_task necessary
+        asyncio.create_task(self.update_data())  # Run update in background
 
         
 controller = AzimuthController(connection_type="RTU")
