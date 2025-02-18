@@ -1,6 +1,7 @@
 // Import thruster from
 import { ObcThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/thruster/thruster'
 import '../styles/dashboard.css'
+
 // Create Thruster and thrust props
 type ThrusterProps = {
   thrust: number //  The thrust of the thruster in percent (0-100)
