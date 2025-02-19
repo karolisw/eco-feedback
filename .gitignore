@@ -7,3 +7,4 @@ modbus_gui
 backend/infrastructure/controller/examples
 cospy
 runs.db
+simulator

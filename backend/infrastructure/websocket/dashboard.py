@@ -28,11 +28,12 @@ class Dashboard:
                     self.latest_data = formatted_data
                     await self.broadcast_data()
                 else:
-                    logger.info("Skipping sending data due to all values being zero.")
+                    #logger.info("Skipping sending data due to all values being zero.")
+                    pass
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
-            await asyncio.sleep(0.1)  # Ensures it doesn't flood the system
+            await asyncio.sleep(2)  # Ensures it doesn't flood the system
 
 
     async def broadcast_data(self):
@@ -79,7 +80,7 @@ class Dashboard:
             while True:
                 if self.latest_data:
                     await websocket.send_json(self.latest_data)
-                await asyncio.sleep(0.1)  # Prevents tight loop
+                await asyncio.sleep(2)  # Prevents tight loop
         except Exception as e:
             logger.info(f"WebSocket disconnected: {e}")
         finally:

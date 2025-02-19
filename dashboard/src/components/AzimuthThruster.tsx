@@ -1,5 +1,6 @@
 //import { ObcThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/thruster/thruster'
-import { ObcAzimuthThrusterLabeled } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster-labeled/azimuth-thruster-labeled'
+//import { ObcAzimuthThrusterLabeled } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster-labeled/azimuth-thruster-labeled'
+import { ObcAzimuthThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster/azimuth-thruster'
 import '../styles/dashboard.css'
 
 type AzimuthThrusterProps = {
@@ -19,6 +20,8 @@ export function AzimuthThruster({
   atThrustSetpoint,
   atAngleSetpoint
 }: AzimuthThrusterProps) {
+  {
+    /*
   return (
     <div className="dashboard-component">
       <ObcAzimuthThrusterLabeled
@@ -29,6 +32,21 @@ export function AzimuthThruster({
         atThrustSetpoint={atThrustSetpoint}
         atAngleSetpoint={atAngleSetpoint}
       ></ObcAzimuthThrusterLabeled>
+    </div>
+  )
+}
+  */
+  }
+  return (
+    <div className="dashboard-component">
+      <ObcAzimuthThruster
+        thrust={thrust}
+        angle={angle}
+        thrustSetpoint={setPoint}
+        touching={touching}
+        atThrustSetpoint={atThrustSetpoint}
+        atAngleSetpoint={atAngleSetpoint}
+      ></ObcAzimuthThruster>
     </div>
   )
 }

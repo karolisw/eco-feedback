@@ -1,12 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-
-type DashboardData = {
-  currentThrust: number
-  currentAngle: number
-  consumption: number
-  currentEmissions: number
-  ecoScore: number
-}
+import { DashboardData } from '../types/DashboardData'
 
 export function UseWebSocket(url: string, initialData: DashboardData) {
   const [data, setData] = useState<DashboardData>(initialData)
@@ -16,7 +9,7 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
 
   useEffect(() => {
     if (ws.current) {
-      ws.current.close() // ✅ Close existing WebSocket before creating a new one
+      ws.current.close()
     }
 
     ws.current = new WebSocket(url)
