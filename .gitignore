@@ -5,6 +5,14 @@ backend/utils.py
 __pycache__
 modbus_gui
 backend/infrastructure/controller/examples
-cospy
 runs.db
-simulator
+simulator/3D_engine
+simulator/ais_traffic
+simulator/icons
+simulator/libs
+simulator/snippets
+simulator/specs
+simulator/alesund_with_ais.html
+simulator/alesund.html
+simulator/index.html
+simulator/README.md
