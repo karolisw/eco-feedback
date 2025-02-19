@@ -60,8 +60,7 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
       'currentThrust' in data &&
       'currentAngle' in data &&
       'consumption' in data &&
-      'currentEmissions' in data &&
-      'ecoScore' in data
+      'currentEmissions' in data
     )
   }
 
@@ -73,8 +72,7 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
       newData.currentThrust !== oldData.currentThrust ||
       newData.currentAngle !== oldData.currentAngle ||
       newData.consumption !== oldData.consumption ||
-      newData.currentEmissions !== oldData.currentEmissions ||
-      newData.ecoScore !== oldData.ecoScore
+      newData.currentEmissions !== oldData.currentEmissions
     )
   }
 

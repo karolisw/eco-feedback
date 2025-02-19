@@ -14,8 +14,7 @@ export function Dashboard() {
     currentThrust: 20,
     currentAngle: 80, // Between -90 and 90
     consumption: 0,
-    currentEmissions: 20,
-    ecoScore: 100
+    currentEmissions: 20
   }
 
   const initialSimData: SimulatorData = {

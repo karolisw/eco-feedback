@@ -14,7 +14,6 @@ export function MiniDashboard() {
     currentAngle: 80, // Between -90 and 90
     consumption: 0,
     currentEmissions: 20,
-    ecoScore: 100
   }
 
   const data = UseWebSocket('ws://127.0.0.1:8000/ws', initialData)

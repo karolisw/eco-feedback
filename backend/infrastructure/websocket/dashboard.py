@@ -63,7 +63,6 @@ class Dashboard:
                 "currentAngle": float(raw_data.get("IREG_2_200", 0)),
                 "consumption": 0,  # Placeholder
                 "currentEmissions": 0,  # Placeholder
-                "ecoScore": 0,  # Placeholder
             }
             return formatted_data
         except Exception as e:
