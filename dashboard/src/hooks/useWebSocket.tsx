@@ -51,6 +51,15 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     }
   }, [url]) // ✅ Depend only on `url` to avoid re-creating unnecessary WebSockets
 
+  // To be able to send messages to the backend
+  const sendMessage = (message: string) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(message)
+    } else {
+      console.warn('WebSocket is not open')
+    }
+  }
+
   function isDashboardData(
     data: DashboardData | string
   ): data is DashboardData {
@@ -60,8 +69,7 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
       'currentThrust' in data &&
       'currentAngle' in data &&
       'consumption' in data &&
-      'currentEmissions' in data &&
-      'ecoScore' in data
+      'currentEmissions' in data
     )
   }
 
@@ -71,12 +79,9 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
   ): boolean {
     return (
       newData.currentThrust !== oldData.currentThrust ||
-      newData.currentAngle !== oldData.currentAngle ||
-      newData.consumption !== oldData.consumption ||
-      newData.currentEmissions !== oldData.currentEmissions ||
-      newData.ecoScore !== oldData.ecoScore
+      newData.currentAngle !== oldData.currentAngle
     )
   }
 
-  return { data, isConnected }
+  return { data, isConnected, sendMessage }
 }

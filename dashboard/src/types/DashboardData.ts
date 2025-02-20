@@ -1,9 +1,6 @@
 export type DashboardData = {
   currentThrust: number
   currentAngle: number
-  consumption: number
-  currentEmissions: number
-  ecoScore: number
 }
 
 export type SimulatorData = {

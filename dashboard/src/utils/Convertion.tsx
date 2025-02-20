@@ -13,3 +13,10 @@ export function gramsToKiloGrams(grams: number) {
 export function toHeading(value: number): number {
   return (value + 360) % 360
 }
+
+// Calculate averages
+export function calculateAverage(arr: number[]) {
+  return arr.length
+    ? arr.reduce((sum, value) => sum + value, 0) / arr.length
+    : 0
+}
