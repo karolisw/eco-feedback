@@ -1,4 +1,5 @@
-import time
+import json
+from persistance.database import Database
 from fastapi import FastAPI, WebSocket
 from ..controller.azimuth_controller import controller
 import logging
@@ -17,6 +18,7 @@ class Dashboard:
         self.clients = set()  # Use a set to avoid duplicate clients
         self.latest_data = None  # Store the latest formatted data
         self.controller = controller  # Global AzimuthController instance
+        self.database = Database()  # Initialize database instance # TODO should probably be instantiated someplace else - and maybe be a singleton?
 
     async def fetch_data(self):
         while True:
@@ -39,7 +41,6 @@ class Dashboard:
     async def broadcast_data(self):
         """Immediately send the latest data to all connected clients."""
         if self.latest_data and self.clients:
-            #tasks = []
             for client in self.clients:
                 try:
                     logger.info(f"Sending formatted data to client: {client.client}")
@@ -61,8 +62,6 @@ class Dashboard:
             formatted_data = {
                 "currentThrust": float(raw_data.get("IREG_0_100", 0)),
                 "currentAngle": float(raw_data.get("IREG_2_200", 0)),
-                "consumption": 0,  # Placeholder
-                "currentEmissions": 0,  # Placeholder
             }
             return formatted_data
         except Exception as e:
@@ -71,14 +70,38 @@ class Dashboard:
 
     async def websocket_endpoint(self, websocket: WebSocket):
         """Handles WebSocket connections and continuously sends the latest data."""
+        # TODO this willl probably block the sending of data to the dashboard
         await websocket.accept()
         logger.info(f"WebSocket client connected: {websocket.client}")
         self.clients.add(websocket)
 
         try:
             while True:
+                # Send data to frontend
                 if self.latest_data:
                     await websocket.send_json(self.latest_data)
+                
+                # Receive and process messages
+                data = await websocket.receive_text()
+                message = json.loads(data)
+
+                if message.get("command") == "stop_simulation":
+                    avg_speed = message.get("avg_speed", 0)
+                    avg_rpm = message.get("avg_rpm", 0)
+                    total_consumption = message.get("total_consumption", 0)
+                    run_time = message.get("run_time", 0)
+                    configuration_number = message.get("configuration_number", 1)
+                    logger.info(f"Storing run data: Speed={avg_speed}, RPM={avg_rpm}, Emissions={total_emissions}, Runtime={run_time}")
+
+                    # Store data in the database
+                    await self.database.store_data(
+                        total_consumption=total_consumption,
+                        run_time=run_time,
+                        configuration_number=configuration_number,
+                        average_speed=avg_speed,
+                        average_rpm=avg_rpm
+                    )
+                    
                 await asyncio.sleep(2)  # Prevents tight loop
         except Exception as e:
             logger.info(f"WebSocket disconnected: {e}")
