@@ -51,6 +51,44 @@
   min-width: 30%;
 }
 
+.button-row {
+  display: flex;
+  justify-content: center; /* Center the buttons */
+  gap: 15px; /* Add space between buttons */
+  margin-bottom: 15px; /* Add space below the buttons */
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button:hover {
+  opacity: 0.8;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+/* Start Button */
+.button:first-child {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+
+/* Stop Button */
+.button:last-child {
+  background-color: #d9534f; /* Red */
+  color: white;
+}
+
+
 /* Styling for the AzimuthThruster Component TODO: not in use 
 .azimuth-thruster-container {
     width: 90%;
