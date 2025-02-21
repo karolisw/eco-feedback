@@ -100,7 +100,7 @@ class AzimuthController:
             print(f"[ERROR] Failed to read CSV file: {e}")
             return None
 
-    def assign_registers(self): # TODO async?
+    def assign_registers(self):
         """Creates a dictionary of registers based on the CSV file."""
         data = self.read_csv()
         if data is None:
