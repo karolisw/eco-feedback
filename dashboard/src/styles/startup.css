@@ -1,0 +1,31 @@
+.startup-container {
+    text-align: center;
+    margin-top: 50px;
+  }
+  
+  .config-selection {
+    margin: 20px 0;
+  }
+  
+  .start-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: green;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .start-button:disabled {
+    background-color: gray;
+  }
+  
+  .stop-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
