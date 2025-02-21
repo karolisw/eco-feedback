@@ -4,7 +4,7 @@ tcp:
 
 rtu:
   port: "COM3"
-  csv_file: "./Interfacing Overview - Export.csv"
+  csv_file: "./config_files/Interfacing Overview - Export.csv"
   stopbits: 1
   bytesize: 8
   parity: "N"
