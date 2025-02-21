@@ -1,14 +1,15 @@
 import json
-from persistance.database import Database
-from fastapi import FastAPI, WebSocket
-from ..controller.azimuth_controller import controller
 import logging
 import asyncio
+from persistance.database import Database
+from fastapi import APIRouter, WebSocket
+from ..controller.azimuth_controller import controller
 
-app = FastAPI()
 
 logger = logging.getLogger("websocket")
 logging.basicConfig(level=logging.INFO)
+
+router = APIRouter()
 
 class Dashboard:
     """
@@ -18,7 +19,12 @@ class Dashboard:
         self.clients = set()  # Use a set to avoid duplicate clients
         self.latest_data = None  # Store the latest formatted data
         self.controller = controller  # Global AzimuthController instance
-        self.database = Database()  # Initialize database instance # TODO should probably be instantiated someplace else - and maybe be a singleton?
+        self.database = None  
+        
+    def set_database(self, database: Database):
+        """Assigns a database instance to the dashboard singleton."""
+        self.database = database
+        
 
     async def fetch_data(self):
         while True:
@@ -91,7 +97,7 @@ class Dashboard:
                     total_consumption = message.get("total_consumption", 0)
                     run_time = message.get("run_time", 0)
                     configuration_number = message.get("configuration_number", 1)
-                    logger.info(f"Storing run data: Speed={avg_speed}, RPM={avg_rpm}, Emissions={total_emissions}, Runtime={run_time}")
+                    logger.info(f"Storing run data")
 
                     # Store data in the database
                     await self.database.store_data(
@@ -116,11 +122,8 @@ dashboard = Dashboard()
 def start_dashboard():
     asyncio.create_task(dashboard.fetch_data())
 
-@app.on_event("startup")
-def startup_event():
-    """Start background data processing on FastAPI startup."""
-    start_dashboard()  # Do NOT `await` this
-
-@app.websocket("/ws")
+@router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await dashboard.websocket_endpoint(websocket)
+    
+
