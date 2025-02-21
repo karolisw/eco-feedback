@@ -7,7 +7,6 @@ export function UseSimulatorWebSocket(
 ) {
   const [data, setData] = useState<SimulatorData>(initialSimData)
   const ws = useRef<WebSocket | null>(null)
-  const [isConnected, setIsConnected] = useState<boolean>(false)
 
   useEffect(() => {
     if (ws.current) {
@@ -17,7 +16,6 @@ export function UseSimulatorWebSocket(
     ws.current = new WebSocket(url)
 
     ws.current.onopen = () => {
-      setIsConnected(true)
       console.log('Simulator WebSocket connected')
     }
 
@@ -36,7 +34,6 @@ export function UseSimulatorWebSocket(
       console.error('Simulator WebSocket error', error)
 
     ws.current.onclose = () => {
-      setIsConnected(false)
       console.log('Simulator WebSocket connection closed')
     }
 
@@ -52,5 +49,5 @@ export function UseSimulatorWebSocket(
     }
   }
 
-  return { data, isConnected, sendMessage }
+  return { data, sendMessage }
 }
