@@ -4,10 +4,9 @@ import logging
 import subprocess
 from websocket_server import WebsocketServer
 
-# Store connected dashboard clients as a list (not a set)
 dashboard_clients = []
-simulation_running = False  # Global flag for stopping simulation
-simulation_process = None  # Global variable for the simulator process
+simulation_running = False 
+simulation_process = None  
 
 # Create WebSocket server
 server = WebsocketServer(host="localhost", port=8003, loglevel=logging.INFO)
@@ -26,8 +25,7 @@ def client_left(client, server):
 
 def message_received(client, server, message):
     """Handles messages from both the simulator and the dashboard."""
-    global simulation_running #TODO is it okay to keep this global variable when i have simulation_process?
-    global simulation_process
+    global simulation_running, simulation_process
     try:
         data = json.loads(message)
         print(f"Received message: {data}")
@@ -58,20 +56,6 @@ def message_received(client, server, message):
 
     except Exception as e:
         print(f"Error processing message: {e}")
-"""
-def message_received(client, server, message):
-    Handles messages from the simulator and forwards them to dashboards.
-    try:
-        data = json.loads(message)
-        print(f"Received from simulator: {data}")
-
-        # Forward data to all connected dashboard clients
-        for dashboard_client in dashboard_clients:
-            server.send_message(dashboard_client, json.dumps(data))
-
-    except Exception as e:
-        print(f"Error processing message: {e}")
-"""
 
 
 # Set up event handlers
