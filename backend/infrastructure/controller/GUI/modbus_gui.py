@@ -20,7 +20,9 @@ logging.basicConfig(level=logging.INFO)
 max_rows = 12
 
 # Config directory
-CONFIG_DIR = "./modbus_config/"
+#CONFIG_DIR = "./modbus_config/"
+CONFIG_DIR = "../../../config_files/"
+
 
 # Setup customtkinter
 ctk.set_appearance_mode("System")
@@ -204,7 +206,8 @@ class App(ctk.CTk):
             return
         
         # Ensure the folder exists
-        save_dir = "./modbus_config"
+        #save_dir = "./modbus_config"
+        save_dir = CONFIG_DIR
         os.makedirs(save_dir, exist_ok=True)
         
         # Define the full file path

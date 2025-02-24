@@ -7,7 +7,6 @@ export function UseSimulatorWebSocket(
 ) {
   const [data, setData] = useState<SimulatorData>(initialSimData)
   const ws = useRef<WebSocket | null>(null)
-  const [isConnected, setIsConnected] = useState<boolean>(false)
 
   useEffect(() => {
     if (ws.current) {
@@ -17,7 +16,6 @@ export function UseSimulatorWebSocket(
     ws.current = new WebSocket(url)
 
     ws.current.onopen = () => {
-      setIsConnected(true)
       console.log('Simulator WebSocket connected')
     }
 
@@ -35,13 +33,12 @@ export function UseSimulatorWebSocket(
     ws.current.onerror = (error) =>
       console.error('Simulator WebSocket error', error)
 
-    ws.current.onclose = () => {
-      setIsConnected(false)
-      console.log('Simulator WebSocket connection closed')
+    ws.current.onclose = (event) => {
+      console.log('Simulator WebSocket connection closed:', event.reason)
     }
 
-    return () => ws.current?.close()
-  }, [url]) // WebSocket should reconnect when simulation state changes
+    return () => ws.current?.close() // Cleanup on component unmount
+  }, [url])
 
   // Function to send messages to the simulator WebSocket
   const sendMessage = (message: string) => {
@@ -52,5 +49,5 @@ export function UseSimulatorWebSocket(
     }
   }
 
-  return { data, isConnected, sendMessage }
+  return { data, sendMessage }
 }

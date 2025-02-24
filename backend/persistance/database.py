@@ -1,7 +1,5 @@
 # Database connection and query handling - This is where the runs are stored and retrieved from the database
 import sqlite3
-
-import sqlite3
 import asyncio
 
 class Database:
@@ -24,11 +22,15 @@ class Database:
                 )
             ''')
             conn.commit()
-
+            
     async def store_data(self, run_time, total_consumption, configuration_number, average_speed, average_rpm):
-        """Store run data asynchronously."""
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self._store_data_sync, run_time, total_consumption, configuration_number, average_speed, average_rpm)
+        """Store run data asynchronously in a separate thread to prevent blocking."""
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            None, 
+            self._store_data_sync, 
+            run_time, total_consumption, configuration_number, average_speed, average_rpm
+        )
 
     def _store_data_sync(self, run_time, total_consumption, configuration_number, average_speed, average_rpm):
         """Insert a new record into the database (blocking function)."""

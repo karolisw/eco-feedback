@@ -4,18 +4,18 @@ import logging
 import subprocess
 from websocket_server import WebsocketServer
 
-# Store connected dashboard clients as a list (not a set)
 dashboard_clients = []
-simulation_running = False  # Global flag for stopping simulation
-simulation_process = None  # Global variable for the simulator process
+simulation_running = False 
+simulation_process = None  
 
 # Create WebSocket server
 server = WebsocketServer(host="localhost", port=8003, loglevel=logging.INFO)
 
 def new_client(client, server):
     """Handles a new dashboard client connection."""
-    print(f"Dashboard connected: {client['id']}")
-    dashboard_clients.append(client)  # Use append() instead of add()
+    print(f"New client connected: {client['id']}")
+    if client not in dashboard_clients:
+        dashboard_clients.append(client)
 
 def client_left(client, server):
     """Handles a dashboard client disconnection."""
@@ -26,8 +26,7 @@ def client_left(client, server):
 
 def message_received(client, server, message):
     """Handles messages from both the simulator and the dashboard."""
-    global simulation_running #TODO is it okay to keep this global variable when i have simulation_process?
-    global simulation_process
+    global simulation_running, simulation_process
     try:
         data = json.loads(message)
         print(f"Received message: {data}")
@@ -37,7 +36,7 @@ def message_received(client, server, message):
             if data["command"] == "stop_simulation":
                 print("Simulation stopped by dashboard command.")
                 simulation_running = False  # Stop the simulation loop
-                # TODO Does this stop the simulation (index.html)?
+                # TODO Does this stop the simulation (index.html)? No it does not.
                 if simulation_process:
                     print("terminating simulation process")
                     simulation_process.terminate()  # Kill the process
@@ -51,6 +50,7 @@ def message_received(client, server, message):
                 return
             
         # If not a command, assume it's simulator data and forward it
+        print(f"Simulation Running State: {simulation_running}")
         if simulation_running:
             for dashboard_client in dashboard_clients:
                 server.send_message(dashboard_client, json.dumps(data))
@@ -58,20 +58,6 @@ def message_received(client, server, message):
 
     except Exception as e:
         print(f"Error processing message: {e}")
-"""
-def message_received(client, server, message):
-    Handles messages from the simulator and forwards them to dashboards.
-    try:
-        data = json.loads(message)
-        print(f"Received from simulator: {data}")
-
-        # Forward data to all connected dashboard clients
-        for dashboard_client in dashboard_clients:
-            server.send_message(dashboard_client, json.dumps(data))
-
-    except Exception as e:
-        print(f"Error processing message: {e}")
-"""
 
 
 # Set up event handlers

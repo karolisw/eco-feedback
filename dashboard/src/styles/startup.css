@@ -1,0 +1,151 @@
+/* Overall container - centers everything */
+.startup-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  color: #333;
+}
+
+/* Title Styling */
+.startup-container h1 {
+  font-size: 2.8rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 30px;
+}
+
+/* Main Row Layout */
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start; 
+  width: 80%;
+  max-width: 1200px;
+}
+
+/* Information Section */
+.info-section {
+  flex: 1;
+  padding: 25px;
+  text-align: left;
+  max-width: 50%;
+}
+
+.info-section h2 {
+  font-size: 1.6rem;
+  color: #2980b9;
+  margin-bottom: 10px;
+}
+
+.info-section p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.info-section h3 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin-top: 20px;
+}
+
+.info-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.info-section li {
+  font-size: 1rem;
+  padding: 6px 0;
+}
+
+/* Ensure the label aligns with the h1 */
+.config-selection {
+  flex: 1;
+  padding: 25px;
+  margin-top: 25px;
+  text-align: center;
+  max-width: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Ensures it starts at the top */
+}
+
+.config-selection label {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: block;
+  align-self:center; /* Aligns to the left */
+}
+
+/* Ensures select stays below label */
+.config-selection select {
+  width: 50%;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  margin-bottom: 20px;
+  align-self: center; /* Aligns to the left */
+}
+
+/* Start Simulation Button */
+.start-button {
+  width: 50%;
+  padding: 12px 0;
+  margin-top: 16px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+  align-self: center;
+}
+
+.start-button:hover {
+  background-color: #219150;
+}
+
+.start-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .info-section, .config-selection {
+    max-width: 80%;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .startup-container h1 {
+    font-size: 2.2rem;
+  }
+
+  .info-section, .config-selection {
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .start-button {
+    width: 100%;
+  }
+}
