@@ -5,12 +5,13 @@ import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { SimulatorData } from '../types/DashboardData'
 import { ConfigResponse } from '../types/ConfigResponse'
 import { ConfigFiles } from '../types/ConfigFiles'
+import '../styles/startup.css'
 
 export function Startup() {
   const [configFiles, setConfigFiles] = useState<string[]>([])
   const [selectedConfig, setSelectedConfig] = useState<string>('')
   const navigate = useNavigate()
-  const { setSimulationRunning } = useSimulation() 
+  const { setSimulationRunning } = useSimulation()
 
   const initialSimData: SimulatorData = {
     heading: 90,
@@ -92,23 +93,62 @@ export function Startup() {
   return (
     <div className="startup-container">
       <h1>Ship Simulator</h1>
-      <div className="config-selection">
-        <label htmlFor="config">Select Configuration:</label>
-        <select
-          id="config"
-          value={selectedConfig}
-          onChange={(e) => setSelectedConfig(e.target.value)}
-        >
-          {configFiles.map((file) => (
-            <option key={file} value={file}>
-              {file}
-            </option>
-          ))}
-        </select>
+
+      {/* Information Section */}
+      <div className="row">
+        <div className="info-section">
+          <h2>What is this Simulation?</h2>
+          <p>
+            This simulator is designed to test eco-feedback mechanisms for
+            ships. It provides real-time data on fuel consumption, efficiency,
+            and other key parameters. The goal is to study how feedback can help
+            operators optimize energy use.
+          </p>
+          <h3>How to Control the Ship</h3>
+          <ul>
+            <li>
+              <b>W</b> - Increase throttle
+            </li>
+            <li>
+              <b>S</b> - Decrease throttle
+            </li>
+            <li>
+              <b>A</b> - Turn left
+            </li>
+            <li>
+              <b>D</b> - Turn right
+            </li>
+            <li>
+              <b>Controller Support</b> - If a controller is connected, you can
+              use the joystick to steer.
+            </li>
+          </ul>
+        </div>
+
+        {/* Configuration Selection */}
+        <div className="config-selection">
+          <label htmlFor="config">Select Configuration:</label>
+          <select
+            id="config"
+            value={selectedConfig}
+            onChange={(e) => setSelectedConfig(e.target.value)}
+          >
+            {configFiles.map((file) => (
+              <option key={file} value={file}>
+                {file}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => void startSimulation()}
+            className="start-button"
+          >
+            Start Simulation
+          </button>
+        </div>
       </div>
-      <button onClick={() => void startSimulation()} className="start-button">
-        Start Simulation
-      </button>
+
+      {/* Start Simulation Button */}
     </div>
   )
 }
