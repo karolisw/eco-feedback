@@ -13,8 +13,9 @@ server = WebsocketServer(host="localhost", port=8003, loglevel=logging.INFO)
 
 def new_client(client, server):
     """Handles a new dashboard client connection."""
-    print(f"Dashboard connected: {client['id']}")
-    dashboard_clients.append(client)  # Use append() instead of add()
+    print(f"New client connected: {client['id']}")
+    if client not in dashboard_clients:
+        dashboard_clients.append(client)
 
 def client_left(client, server):
     """Handles a dashboard client disconnection."""
@@ -35,7 +36,7 @@ def message_received(client, server, message):
             if data["command"] == "stop_simulation":
                 print("Simulation stopped by dashboard command.")
                 simulation_running = False  # Stop the simulation loop
-                # TODO Does this stop the simulation (index.html)?
+                # TODO Does this stop the simulation (index.html)? No it does not.
                 if simulation_process:
                     print("terminating simulation process")
                     simulation_process.terminate()  # Kill the process
@@ -49,6 +50,7 @@ def message_received(client, server, message):
                 return
             
         # If not a command, assume it's simulator data and forward it
+        print(f"Simulation Running State: {simulation_running}")
         if simulation_running:
             for dashboard_client in dashboard_clients:
                 server.send_message(dashboard_client, json.dumps(data))
