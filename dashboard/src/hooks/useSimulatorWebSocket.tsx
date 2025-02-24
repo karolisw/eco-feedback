@@ -33,12 +33,12 @@ export function UseSimulatorWebSocket(
     ws.current.onerror = (error) =>
       console.error('Simulator WebSocket error', error)
 
-    ws.current.onclose = () => {
-      console.log('Simulator WebSocket connection closed')
+    ws.current.onclose = (event) => {
+      console.log('Simulator WebSocket connection closed:', event.reason)
     }
 
-    return () => ws.current?.close()
-  }, [url]) // WebSocket should reconnect when simulation state changes
+    return () => ws.current?.close() // Cleanup on component unmount
+  }, [url])
 
   // Function to send messages to the simulator WebSocket
   const sendMessage = (message: string) => {
