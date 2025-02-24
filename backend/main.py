@@ -36,22 +36,6 @@ def startup_event():
     """Start background data processing on FastAPI startup."""
     asyncio.create_task(dashboard.fetch_data())
     
-async def start_services():
-    """Runs the AzimuthController, but aborts if the connection fails."""
-    print("[INFO] Attempting to start AzimuthController...")
-
-    try:
-        await controller.assign_registers()
-        connected = await controller.connect()  # Ensure connection is established
-        
-        if not connected:
-            print("[ERROR] Failed to connect to Modbus server. Aborting start_services.")
-            return  # Exit function without starting update loop
-        
-        asyncio.create_task(controller.update_data())  # Run update in background
-
-    except Exception as e:
-        print(f"[ERROR] Unexpected error while starting controller: {e}")
 
 
 async def run_server():
@@ -62,7 +46,7 @@ async def run_server():
 
 async def main():
     """Runs the controller and WebSocket server concurrently."""
-    await asyncio.gather(start_services(), run_server())
+    await asyncio.gather(run_server())
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
