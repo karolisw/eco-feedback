@@ -10,7 +10,7 @@ export function Startup() {
   const [configFiles, setConfigFiles] = useState<string[]>([])
   const [selectedConfig, setSelectedConfig] = useState<string>('')
   const navigate = useNavigate()
-  const { setSimulationRunning } = useSimulation() // Updates simulation running state in context
+  const { setSimulationRunning } = useSimulation() 
 
   const initialSimData: SimulatorData = {
     heading: 90,
@@ -31,20 +31,6 @@ export function Startup() {
     initialSimData
   )
 
-  // Fetch config files from backend
-  /*
-  useEffect(() => {
-    fetch('http://127.0.0.1:8000/get-config-files') // Backend API to list config files
-      .then((res) => res.json())
-      .then((data) => {
-        setConfigFiles(data.files)
-        if (data.files.length > 0) {
-          setSelectedConfig(data.files[0]) // Select the first one by default
-        }
-      })
-      .catch((error) => console.error('Error fetching config files:', error))
-  }, [])
-  */
   // Fetch config files from backend
   useEffect(() => {
     const fetchConfigFiles = async () => {
@@ -67,31 +53,6 @@ export function Startup() {
 
     void fetchConfigFiles()
   }, [])
-
-  // Handle Start Simulation (via WebSocket)
-  /*
-  const startSimulation = () => {
-    sendToSimulator(
-      JSON.stringify({ command: 'start_simulation' }) //, config: selectedConfig }) // TODO wrong: The config has nothing to do with the simulator
-    )
-    void navigate('/simulator')
-  }
-  */
-  /*
- (async () => {
-  const rawResponse = await fetch('https://httpbin.org/post', {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({a: 1, b: 'Textual content'})
-  });
-  const content = await rawResponse.json();
-
-  console.log(content);
-})();
- */
 
   // Handle Start Simulation
   const startSimulation = async () => {
