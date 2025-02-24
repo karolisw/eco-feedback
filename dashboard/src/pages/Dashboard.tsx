@@ -13,9 +13,10 @@ import {
   gramsToKiloGrams,
   calculateAverage
 } from '../utils/Convertion'
+import { useSimulation } from '../hooks/useSimulation'
 
 export function Dashboard() {
-  const [simulationRunning, setSimulationRunning] = useState<boolean>(false)
+  const { simulationRunning, setSimulationRunning } = useSimulation() // Retrieving simulation running state from context
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
   const navigate = useNavigate()
@@ -59,25 +60,6 @@ export function Dashboard() {
     }
   }, [simulatorData])
 
-  /*
-  const startSimulation = () => {
-    sendToSimulator(JSON.stringify({ command: 'start_simulation' }))
-
-    console.log('Start simulation command sent')
-    setSimulationRunning(true)
-
-    // Reload the iframe when simulation starts
-    const iframe = document.querySelector(
-      '.simulator-panel iframe'
-    ) as HTMLIFrameElement
-    if (iframe) {
-      setTimeout(() => {
-        // eslint-disable-next-line no-self-assign
-        iframe.src = iframe.src
-      }, 1000) // Wait 1 second to allow the server to start
-    }
-  }
-  */
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
     sendToSimulator(JSON.stringify({ command: 'stop_simulation' }))
@@ -163,6 +145,7 @@ export function Dashboard() {
               tag="Speed"
               unit="kn"
               source="Simulator"
+              fractionDigits={1}
               hasSource={true}
             />
           </div>

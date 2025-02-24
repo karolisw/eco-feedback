@@ -1,14 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSimulation } from '../hooks/useSimulation'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { SimulatorData } from '../types/DashboardData'
+import { ConfigResponse } from '../types/ConfigResponse'
+import { ConfigFiles } from '../types/ConfigFiles'
 
 export function Startup() {
   const [configFiles, setConfigFiles] = useState<string[]>([])
   const [selectedConfig, setSelectedConfig] = useState<string>('')
   const navigate = useNavigate()
+  const { setSimulationRunning } = useSimulation() // Updates simulation running state in context
 
   const initialSimData: SimulatorData = {
     heading: 90,
@@ -30,6 +32,7 @@ export function Startup() {
   )
 
   // Fetch config files from backend
+  /*
   useEffect(() => {
     fetch('http://127.0.0.1:8000/get-config-files') // Backend API to list config files
       .then((res) => res.json())
@@ -41,13 +44,88 @@ export function Startup() {
       })
       .catch((error) => console.error('Error fetching config files:', error))
   }, [])
+  */
+  // Fetch config files from backend
+  useEffect(() => {
+    const fetchConfigFiles = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/get-config-files')
+        if (!response.ok) {
+          throw new Error(`Failed to fetch config files: ${response.status}`)
+        }
+        const data: ConfigFiles = (await response.json()) as ConfigFiles
+
+        setConfigFiles(data.files)
+
+        if (data.files.length > 0) {
+          setSelectedConfig(data.files[0]) // Select the first one by default
+        }
+      } catch (error) {
+        console.error('Error fetching config files:', error)
+      }
+    }
+
+    void fetchConfigFiles()
+  }, [])
 
   // Handle Start Simulation (via WebSocket)
+  /*
   const startSimulation = () => {
     sendToSimulator(
       JSON.stringify({ command: 'start_simulation' }) //, config: selectedConfig }) // TODO wrong: The config has nothing to do with the simulator
     )
     void navigate('/simulator')
+  }
+  */
+  /*
+ (async () => {
+  const rawResponse = await fetch('https://httpbin.org/post', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({a: 1, b: 'Textual content'})
+  });
+  const content = await rawResponse.json();
+
+  console.log(content);
+})();
+ */
+
+  // Handle Start Simulation
+  const startSimulation = async () => {
+    try {
+      console.log('file name is: ', selectedConfig)
+      // Send selected config file to backend
+      const response = await fetch('http://127.0.0.1:8000/load-config', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ file_name: selectedConfig })
+      })
+
+      const data: ConfigResponse = (await response.json()) as ConfigResponse
+
+      // Not able to connect to the controller
+      if (data.error) {
+        //console.error('Error loading config:', data.error)
+        return
+      }
+
+      console.log(data.message)
+
+      // Set simulationRunning to true globally
+      setSimulationRunning(true)
+
+      // Now start the simulation
+      sendToSimulator(JSON.stringify({ command: 'start_simulation' }))
+      void navigate('/simulator') // Move to dashboard
+    } catch (error) {
+      console.error('Failed to start simulation:', error)
+    }
   }
 
   return (
@@ -67,7 +145,7 @@ export function Startup() {
           ))}
         </select>
       </div>
-      <button onClick={startSimulation} className="start-button">
+      <button onClick={() => void startSimulation()} className="start-button">
         Start Simulation
       </button>
     </div>
