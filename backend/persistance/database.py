@@ -1,7 +1,5 @@
 # Database connection and query handling - This is where the runs are stored and retrieved from the database
 import sqlite3
-
-import sqlite3
 import asyncio
 
 class Database:

@@ -35,8 +35,6 @@ dashboard.set_database(database)
 def startup_event():
     """Start background data processing on FastAPI startup."""
     asyncio.create_task(dashboard.fetch_data())
-    
-
 
 async def run_server():
     """Starts the FastAPI server with Uvicorn."""
