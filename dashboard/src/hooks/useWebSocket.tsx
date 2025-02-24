@@ -47,7 +47,7 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     }
 
     return () => {
-      ws.current?.close() // ✅ Cleanup WebSocket on component unmount
+      ws.current?.close() 
     }
   }, [url]) // ✅ Depend only on `url` to avoid re-creating unnecessary WebSockets
 
