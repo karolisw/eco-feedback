@@ -24,6 +24,11 @@ export function UseSimulatorWebSocket(
         const message: SimulatorData = JSON.parse(
           event.data as string
         ) as SimulatorData
+        // Prevent overwriting with bad data (0 or NaN)
+        if (!isValidData(message)) {
+          console.warn('Received invalid data, skipping update:', message)
+          return
+        }
         setData(message)
       } catch (error) {
         console.error('Error parsing WebSocket message from simulator', error)
@@ -41,12 +46,19 @@ export function UseSimulatorWebSocket(
   }, [url])
 
   // Function to send messages to the simulator WebSocket
-  const sendMessage = (message: string) => {
+  const sendMessage = (newMessage: string) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(message)
+      ws.current.send(newMessage)
     } else {
       console.warn('Simulator WebSocket is not connected')
     }
+  }
+
+  // Helper function to check if the received data is valid
+  function isValidData(data: SimulatorData) {
+    return (
+      data && !isNaN(data.heading) && !isNaN(data.speed) && !isNaN(data.rpm)
+    )
   }
 
   return { data, sendMessage }
