@@ -28,9 +28,8 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
           isDashboardData(newData) &&
           hasDataChanged(newData, latestData.current)
         ) {
-          console.log('Received correctly formatted data')
           latestData.current = newData
-          setData(newData) // ✅ React state triggers re-render
+          setData(newData) // React state triggers re-render
         }
       } catch (error) {
         console.error('Error parsing WebSocket message', error)
@@ -44,12 +43,13 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     ws.current.onclose = () => {
       setIsConnected(false)
       console.log('WebSocket connection closed')
+      ws.current = null // Ensure WebSocket is reset
     }
 
     return () => {
-      ws.current?.close() 
+      ws.current?.close()
     }
-  }, [url]) // ✅ Depend only on `url` to avoid re-creating unnecessary WebSockets
+  }, [url]) //Depend only on `url` to avoid re-creating unnecessary WebSockets
 
   // To be able to send messages to the backend
   const sendMessage = (message: string) => {
@@ -66,10 +66,12 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     return (
       typeof data === 'object' &&
       data !== null &&
-      'currentThrust' in data &&
-      'currentAngle' in data &&
-      'consumption' in data &&
-      'currentEmissions' in data
+      'position_pri' in data &&
+      'position_sec' in data &&
+      'angle_pri' in data &&
+      'angle_sec' in data &&
+      'pos_setpoint_pri' in data &&
+      'pos_setpoint_sec' in data
     )
   }
 
@@ -78,8 +80,12 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
     oldData: DashboardData
   ): boolean {
     return (
-      newData.currentThrust !== oldData.currentThrust ||
-      newData.currentAngle !== oldData.currentAngle
+      newData.position_pri !== oldData.position_pri ||
+      newData.position_sec !== oldData.position_sec ||
+      newData.angle_pri !== oldData.angle_pri ||
+      newData.angle_sec !== oldData.angle_sec ||
+      newData.pos_setpoint_pri !== oldData.pos_setpoint_pri ||
+      newData.pos_setpoint_sec !== oldData.pos_setpoint_sec
     )
   }
 
