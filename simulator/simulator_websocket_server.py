@@ -29,7 +29,6 @@ def message_received(client, server, message):
     global simulation_running, simulation_process
     try:
         data = json.loads(message)
-        print(f"Received message: {data}")
 
         # Check if this is a command from the dashboard
         if "command" in data:
@@ -50,7 +49,6 @@ def message_received(client, server, message):
                 return
             
         # If not a command, assume it's simulator data and forward it
-        print(f"Simulation Running State: {simulation_running}")
         if simulation_running:
             for dashboard_client in dashboard_clients:
                 server.send_message(dashboard_client, json.dumps(data))
