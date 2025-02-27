@@ -3,7 +3,7 @@ import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
@@ -21,9 +21,18 @@ export function Dashboard() {
   const [rpmData, setRpmData] = useState<number[]>([])
   const navigate = useNavigate()
 
+  // Keep track of last sent command
+  const lastSentCommand = useRef<{ position: number; angle: number } | null>(
+    null
+  )
+
   const initialData: DashboardData = {
-    currentThrust: 20,
-    currentAngle: 80 // Between -90 and 90
+    position_pri: 0,
+    position_sec: 0,
+    angle_pri: 0,
+    angle_sec: 0,
+    pos_setpoint_pri: 0,
+    pos_setpoint_sec: 0
   }
 
   const initialSimData: SimulatorData = {
@@ -42,15 +51,34 @@ export function Dashboard() {
 
   const { sendMessage: sendToSimulator, data: simulatorData } =
     UseSimulatorWebSocket('ws://127.0.0.1:8003', initialSimData)
-  const { sendMessage: sendToBackend, data } = UseWebSocket(
+  const { sendMessage: sendToBackend, data: azimuthData } = UseWebSocket(
     'ws://127.0.0.1:8000/ws',
     initialData
   )
 
-  // Store WebSocket data globally
   useEffect(() => {
-    window.azimuthControllerData = data // Global variable for simulator
-  }, [data])
+    if (azimuthData) {
+      // Prepare new command
+      const newCommand = {
+        command: 'navigate',
+        position: azimuthData.position_pri,
+        angle: azimuthData.angle_pri
+      }
+
+      // Only send if data changed
+      if (
+        !lastSentCommand.current ||
+        lastSentCommand.current.position !== newCommand.position ||
+        lastSentCommand.current.angle !== newCommand.angle
+      ) {
+        console.log('Sending new navigate command:', newCommand)
+        sendToSimulator(JSON.stringify(newCommand))
+        lastSentCommand.current = newCommand // Update last sent command
+      } else {
+        console.log('Skipping redundant command, data unchanged.')
+      }
+    }
+  }, [azimuthData, sendToSimulator])
 
   // Store speed and RPM when data arrives
   useEffect(() => {
@@ -120,14 +148,14 @@ export function Dashboard() {
         <div className="intrument-panel-col">
           <div className="instrument-panel-row">
             <InstrumentField
-              value={data.currentThrust}
+              value={azimuthData.position_pri}
               tag="Power"
               unit="%"
               source="Azimuth"
               hasSource={true}
             ></InstrumentField>
             <InstrumentField
-              value={data.currentAngle}
+              value={azimuthData.angle_pri}
               degree={true}
               tag="Angle"
               unit="°"
@@ -151,8 +179,8 @@ export function Dashboard() {
           </div>
           <div className="instrument-panel-row">
             <MemoizedAzimuthThruster
-              thrust={data.currentThrust}
-              angle={data.currentAngle}
+              thrust={azimuthData.position_pri}
+              angle={azimuthData.angle_pri}
               setPoint={10}
               touching={true}
               atThrustSetpoint={false}
@@ -216,7 +244,7 @@ export function Dashboard() {
           <div className="instrument-panel-row">
             <InstrumentField
               value={simulatorData.consumptionRate}
-              tag="Cons"
+              tag="FuelR"
               unit="kg/h"
               source="Simulator"
               hasSource={true}
@@ -225,12 +253,21 @@ export function Dashboard() {
             ></InstrumentField>
             <InstrumentField
               value={gramsToKiloGrams(simulatorData.consumedTotal)}
-              tag="ConsT"
+              tag="FuelT"
               unit="kg"
               source="Simulator"
               hasSource={true}
               maxDigits={6}
               fractionDigits={2}
+            ></InstrumentField>
+            <InstrumentField
+              value={simulatorData.resistance}
+              tag="Res"
+              unit="N"
+              source="Simulator"
+              hasSource={true}
+              maxDigits={6}
+              fractionDigits={1}
             ></InstrumentField>
           </div>
         </div>

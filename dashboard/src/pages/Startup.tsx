@@ -107,18 +107,6 @@ export function Startup() {
           <h3>How to Control the Ship</h3>
           <ul>
             <li>
-              <b>W</b> - Increase throttle
-            </li>
-            <li>
-              <b>S</b> - Decrease throttle
-            </li>
-            <li>
-              <b>A</b> - Turn left
-            </li>
-            <li>
-              <b>D</b> - Turn right
-            </li>
-            <li>
               <b>Controller Support</b> - If a controller is connected, you can
               use the joystick to steer.
             </li>
