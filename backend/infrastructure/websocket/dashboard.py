@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import itertools
 from persistance.database import Database
 from fastapi import APIRouter, WebSocket
 from ..controller.azimuth_controller import controller
@@ -21,6 +22,10 @@ class Dashboard:
         self.controller = controller  # Global AzimuthController instance
         self.database = None  
         
+        # Mock data generators
+        self.mock_thrust = itertools.cycle([10, 20, 30,40,50,60,70,80,90,100,90,80,70,60,50,40,30, 20, 10, 0])  # Simulates increasing & decreasing thrust
+        self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100,30, 15, 0, -15, -30, -45, -30, -15, 0])  # Oscillates rudder angle
+        
     def set_database(self, database: Database):
         """Assigns a database instance to the dashboard singleton."""
         self.database = database
@@ -30,14 +35,24 @@ class Dashboard:
         while True:
             try:
                 raw_data = await self.controller.get_latest_data() # TODO method is slow (ca 2.5s) - fix
+                
+                # If no real data, send dynamic mock data
+                if not raw_data:
+                    raw_data = {
+                        "IREG_0_100": next(self.mock_thrust),  # Simulates a gradual thrust change
+                        "IREG_0_200": 0,
+                        "IREG_2_100": next(self.mock_angle),  # Simulates rudder angle adjustments
+                        "IREG_2_200": 0,
+                        "IREG_4_100": 50,  # Simulated setpoint for primary thruster
+                        "IREG_4_200": 10   # Simulated setpoint for secondary thruster
+                    }
+                
                 formatted_data = self.format_data(raw_data)
-
-                if formatted_data and any(value != 0 for value in formatted_data.values()):
+                
+                if formatted_data and formatted_data != self.latest_data and self.clients:
+                    logger.info("New Azimuth data, broadcasting...")
                     self.latest_data = formatted_data
                     await self.broadcast_data()
-                else:
-                    #logger.info("Skipping sending data due to all values being zero.")
-                    pass
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
@@ -54,6 +69,7 @@ class Dashboard:
                 except Exception as e:
                     logger.error(f"Error sending data: {e}")
                     self.clients.remove(client)
+                await asyncio.sleep(2)
 
 
     async def remove_client(self, websocket: WebSocket):
@@ -66,8 +82,12 @@ class Dashboard:
         """Transforms raw register data into the required DashboardData format."""
         try:
             formatted_data = {
-                "currentThrust": float(raw_data.get("IREG_0_100", 0)),
-                "currentAngle": float(raw_data.get("IREG_2_200", 0)),
+                "position_pri": float(raw_data.get("IREG_0_100", 0)), # 1st Position register
+                "position_sec": float(raw_data.get("IREG_0_200", 0)), # 2nd Position register
+                "angle_pri": float(raw_data.get("IREG_2_100", 0)), # 1st Angle register
+                "angle_sec": float(raw_data.get("IREG_2_200", 0)), # 2nd Angle register
+                "pos_setpoint_pri": float(raw_data.get("IREG_4_100", 0)),
+                "pos_setpoint_sec": float(raw_data.get("IREG_4_200", 0)),
             }
             return formatted_data
         except Exception as e:
