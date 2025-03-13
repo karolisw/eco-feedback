@@ -74,3 +74,19 @@ npm start
 
 - Exposes functionality via REST API or WebSockets.
 
+## Running the application
+
+### Simulator
+
+cd simulator
+python simulator_websocket.py
+
+### Backend
+
+cd backend
+python main.py
+
+### Frontend
+
+cd dashboard
+npm run dev
