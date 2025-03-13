@@ -78,7 +78,7 @@
 
 /* Start Button */
 .button:first-child {
-  background-color: #4CAF50; /* Green */
+  background-color: #4caf50; /* Green */
   color: white;
 }
 
@@ -87,7 +87,6 @@
   background-color: #d9534f; /* Red */
   color: white;
 }
-
 
 /* Styling for the AzimuthThruster Component TODO: not in use 
 .azimuth-thruster-container {

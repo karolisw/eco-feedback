@@ -4,7 +4,6 @@ import signal
 from fastapi import FastAPI
 import uvicorn
 from infrastructure.websocket.dashboard import router as ws_router, dashboard
-from infrastructure.controller.azimuth_controller import controller
 from persistance.database import Database
 from application.api import router as api_router
 

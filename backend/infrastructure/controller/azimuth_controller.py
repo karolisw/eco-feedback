@@ -184,6 +184,39 @@ class AzimuthController:
                     
         return data_values
     
+    def set_setpoint(self, thrust_value: int, angle_value: int):
+        """
+        Writes the setpoint values to the Modbus registers.
+
+        :param thrust_value: The setpoint for thrust (-100% - 100%).
+        :param angle_value: The setpoint for azimuth angle (-180° to 180°).
+        """
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set setpoint.")
+            return False
+
+        try:
+            # HREG 04 is used to set the primary setpoint (thrust and angle)
+            thrust_register = 0x04
+            angle_register = 0x104  # Assuming this is the correct register for angle setpoint??
+
+            # Write thrust setpoint
+            self.client.write_register(address=thrust_register, value=int(thrust_value), slave=self.slave_id)
+            print(f"[INFO] Set thrust setpoint to {thrust_value}% at register {thrust_register}")
+
+            # Write angle setpoint
+            self.client.write_register(address=angle_register, value=int(angle_value), slave=self.slave_id)
+            print(f"[INFO] Set angle setpoint to {angle_value}° at register {angle_register}")
+
+            return True
+
+        except ModbusIOException as e:
+            print(f"[ERROR] Modbus IO Exception while writing setpoints: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Unexpected error while writing setpoints: {e}")
+            return False
+    
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""

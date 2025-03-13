@@ -23,7 +23,7 @@ class Dashboard:
         self.database = None  
         
         # Mock data generators
-        self.mock_thrust = itertools.cycle([10, 20, 30,40,50,60,70,80,90,100,90,80,70,60,50,40,30, 20, 10, 0])  # Simulates increasing & decreasing thrust
+        self.mock_thrust = itertools.cycle([70,80,90,100,90,80,70])  # Simulates increasing & decreasing thrust
         self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100,30, 15, 0, -15, -30, -45, -30, -15, 0])  # Oscillates rudder angle
         
     def set_database(self, database: Database):
@@ -53,25 +53,71 @@ class Dashboard:
                     logger.info("New Azimuth data, broadcasting...")
                     self.latest_data = formatted_data
                     await self.broadcast_data()
+                    
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
             await asyncio.sleep(2)  # Ensures it doesn't flood the system
 
+    # TODO not used... remove?
+    async def handle_client_messages(self, websocket: WebSocket):
+        """Handles incoming messages from the frontend asynchronously."""
+        try:
+            async for message in websocket.iter_text():
+                logger.info(f"Received WebSocket message: {message}")  # ✅ Debugging message
+                
+                data = json.loads(message)
+
+                if data.get("command") == "set_setpoint":
+                    thrust_setpoint = data.get("thrust_setpoint", 50)
+                    angle_setpoint = data.get("angle_setpoint", 0)
+                    logger.info(f"Received setpoint update - Thrust: {thrust_setpoint}, Angle: {angle_setpoint}")
+
+                    success = self.controller.set_setpoint(thrust_setpoint, angle_setpoint)
+                    if success:
+                        logger.info("Setpoint successfully updated.")
+                    else:
+                        logger.error("Failed to update setpoint.")
+
+                elif data.get("command") == "stop_simulation":
+                    avg_speed = data.get("avg_speed", 0)
+                    avg_rpm = data.get("avg_rpm", 0)
+                    total_consumption = data.get("total_consumption", 0)
+                    run_time = data.get("run_time", 0)
+                    configuration_number = data.get("configuration_number", 1)
+
+                    logger.info("Received stop simulation request.")
+                    
+                    await self.database.store_data(
+                        total_consumption=total_consumption,
+                        run_time=run_time,
+                        configuration_number=configuration_number,
+                        average_speed=avg_speed,
+                        average_rpm=avg_rpm
+                    )
+                    
+                    logger.info("Simulation data stored successfully.")
+
+        except Exception as e:
+            logger.error(f"WebSocket error while receiving messages: {e}")
+
 
     async def broadcast_data(self):
         """Immediately send the latest data to all connected clients."""
+        disconnected_clients = set()
+
         if self.latest_data and self.clients:
-            for client in self.clients:
+            for client in list(self.clients):
                 try:
                     logger.info(f"Sending formatted data to client: {client.client}")
                     await client.send_json(self.latest_data)
                 except Exception as e:
                     logger.error(f"Error sending data: {e}")
-                    self.clients.remove(client)
-                await asyncio.sleep(2)
+                    disconnected_clients.add(client)
+                    
+        self.clients -= disconnected_clients
 
-
+    # TODO not used... remove?
     async def remove_client(self, websocket: WebSocket):
         """Removes a disconnected client safely."""
         if websocket in self.clients:
@@ -93,46 +139,30 @@ class Dashboard:
         except Exception as e:
             logger.error(f"Error formatting data: {e}")
             return None
-
+    
+    
     async def websocket_endpoint(self, websocket: WebSocket):
         """Handles WebSocket connections and continuously sends the latest data."""
-        # TODO this willl probably block the sending of data to the dashboard
         await websocket.accept()
-        logger.info(f"WebSocket client connected: {websocket.client}")
         self.clients.add(websocket)
+        logger.info(f"WebSocket client connected: {websocket.client}")
 
         try:
             while True:
-                # Send data to frontend
-                if self.latest_data:
-                    await websocket.send_json(self.latest_data)
-                
-                # Receive and process messages
+                # Receive messages
                 data = await websocket.receive_text()
-                message = json.loads(data)
+                logger.info(f"Received message: {data}")
 
-                if message.get("command") == "stop_simulation":
-                    avg_speed = message.get("avg_speed", 0)
-                    avg_rpm = message.get("avg_rpm", 0)
-                    total_consumption = message.get("total_consumption", 0)
-                    run_time = message.get("run_time", 0)
-                    configuration_number = message.get("configuration_number", 1)
-                    logger.info(f"Storing run data")
+                # Send response back
+                await websocket.send_text(f"Echo: {data}")
 
-                    # Store data in the database
-                    await self.database.store_data(
-                        total_consumption=total_consumption,
-                        run_time=run_time,
-                        configuration_number=configuration_number,
-                        average_speed=avg_speed,
-                        average_rpm=avg_rpm
-                    )
-                    
-                await asyncio.sleep(2)  # Prevents tight loop
         except Exception as e:
-            logger.info(f"WebSocket disconnected: {e}")
+            logger.error(f"WebSocket error: {e}")
         finally:
-            await self.remove_client(websocket)
+            self.clients.discard(websocket)
+            logger.info(f"Client {websocket.client} disconnected.")
+
+        
 
 
 # Global dashboard instance (singleton)

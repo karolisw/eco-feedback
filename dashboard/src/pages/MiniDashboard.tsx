@@ -10,10 +10,12 @@ import { DashboardData } from '../types/DashboardData'
 
 export function MiniDashboard() {
   const initialData: DashboardData = {
-    currentThrust: 20,
-    currentAngle: 80, // Between -90 and 90
-    consumption: 0,
-    currentEmissions: 20,
+    position_pri: 0,
+    angle_pri: 0,
+    position_sec: 0,
+    angle_sec: 0,
+    pos_setpoint_pri: 0,
+    pos_setpoint_sec: 0
   }
 
   const data = UseWebSocket('ws://127.0.0.1:8000/ws', initialData)
@@ -23,19 +25,21 @@ export function MiniDashboard() {
       <Tabs>
         <TabPanel>
           <MemoizedAzimuthThruster
-            thrust={data.data.currentThrust}
-            angle={data.data.currentAngle}
-            setPoint={10}
+            thrust={data.data.position_pri}
+            angle={data.data.angle_pri}
+            angleSetpoint={0}
+            thrustSetPoint={0}
+            onSetPointChange={() => {}} // Dummy function
             touching={true}
             atThrustSetpoint={false}
             atAngleSetpoint={false}
           />
         </TabPanel>
         <TabPanel>
-          <MemoizedRudder angle={data.data.currentAngle} />
+          <MemoizedRudder angle={data.data.angle_pri} />
         </TabPanel>
         <TabPanel>
-          <MemoizedThruster thrust={data.data.currentThrust} />
+          <MemoizedThruster thrust={data.data.position_pri} />
         </TabPanel>
         <TabList>
           <Tab>Azimuth</Tab>

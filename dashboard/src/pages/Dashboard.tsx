@@ -17,6 +17,8 @@ import { useSimulation } from '../hooks/useSimulation'
 
 export function Dashboard() {
   const { simulationRunning, setSimulationRunning } = useSimulation() // Retrieving simulation running state from context
+  const [thrustSetpoint, setThrustSetpoint] = useState<number>(0)
+  const [angleSetpoint, setAngleSetpoint] = useState<number>(0)
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
   const navigate = useNavigate()
@@ -51,6 +53,7 @@ export function Dashboard() {
 
   const { sendMessage: sendToSimulator, data: simulatorData } =
     UseSimulatorWebSocket('ws://127.0.0.1:8003', initialSimData)
+
   const { sendMessage: sendToBackend, data: azimuthData } = UseWebSocket(
     'ws://127.0.0.1:8000/ws',
     initialData
@@ -63,6 +66,16 @@ export function Dashboard() {
         command: 'navigate',
         position: azimuthData.position_pri,
         angle: azimuthData.angle_pri
+      }
+      // Skip if either of the newCommand values are NaN or undefined
+      if (
+        isNaN(newCommand.position) ||
+        isNaN(newCommand.angle) ||
+        newCommand.position === undefined ||
+        newCommand.angle === undefined
+      ) {
+        console.log('Skipping invalid command, data is NaN or undefined.')
+        return
       }
 
       // Only send if data changed
@@ -126,6 +139,24 @@ export function Dashboard() {
     void navigate('/')
   }
 
+  const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
+    console.log(`🛠 Attempting to set ${type} to`, value) // ✅ Debugging log
+
+    // Update state immediately
+    if (type === 'thrust') {
+      setThrustSetpoint(value)
+    } else {
+      setAngleSetpoint(value)
+    }
+
+    // Send a command to the backend
+    sendToBackend({
+      command: 'set_setpoint',
+      thrust_setpoint: 70,
+      angle_setpoint: -30
+    })
+  }
+
   return (
     <div className="dashboard">
       {/* Simulator Panel */}
@@ -181,10 +212,12 @@ export function Dashboard() {
             <MemoizedAzimuthThruster
               thrust={azimuthData.position_pri}
               angle={azimuthData.angle_pri}
-              setPoint={10}
+              thrustSetPoint={thrustSetpoint}
+              angleSetpoint={angleSetpoint}
               touching={true}
               atThrustSetpoint={false}
               atAngleSetpoint={false}
+              onSetPointChange={handleSetPointChange}
             />
           </div>
         </div>
