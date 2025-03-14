@@ -6,7 +6,7 @@ import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
@@ -73,19 +73,25 @@ export function Dashboard() {
   const state = location.state as LocationState | null // Type casting for safety
 
   // Fetch advices from location state (set in startup page) or use default values
-  const angleAdvices: AngleAdvice[] =
-    state?.angleAdvices ??
-    ([
-      { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
-      { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
-    ] as AngleAdvice[])
+  const angleAdvices: AngleAdvice[] = useMemo(
+    () =>
+      state?.angleAdvices ??
+      ([
+        { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
+        { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
+      ] as AngleAdvice[]),
+    [state?.angleAdvices]
+  )
 
-  const thrustAdvices: LinearAdvice[] =
-    state?.thrustAdvices ??
-    ([
-      { min: 20, max: 50, type: 'advice', hinted: true },
-      { min: 60, max: 100, type: 'caution', hinted: true }
-    ] as LinearAdvice[])
+  const thrustAdvices: LinearAdvice[] = useMemo(
+    () =>
+      state?.thrustAdvices ??
+      ([
+        { min: 20, max: 50, type: 'advice', hinted: true },
+        { min: 60, max: 100, type: 'caution', hinted: true }
+      ] as LinearAdvice[]),
+    [state?.thrustAdvices]
+  )
 
   useEffect(() => {
     if (azimuthData) {
@@ -129,38 +135,61 @@ export function Dashboard() {
     }
   }, [simulatorData])
 
+  const getVibrationStrength = useCallback(() => {
+    let strength = 0
+    const thrust = azimuthData.position_pri
+    const angle = azimuthData.angle_pri
+
+    // Check thrust alert zones
+    for (const advice of thrustAdvices) {
+      if (thrust >= advice.min && thrust <= advice.max) {
+        strength = advice.type === AdviceType.caution ? 2 : 1 // Caution → Medium, Advice → Light
+      }
+    }
+
+    // Check angle alert zones
+    for (const advice of angleAdvices) {
+      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
+        strength = Math.max(
+          strength,
+          advice.type === AdviceType.caution ? 3 : 2
+        ) // Caution → Strong, Advice → Medium
+      }
+    }
+
+    return strength
+  }, [
+    angleAdvices,
+    azimuthData.angle_pri,
+    azimuthData.position_pri,
+    thrustAdvices
+  ])
+
   useEffect(() => {
     if (!azimuthData) return
 
-    const currentThrust = azimuthData.position_pri
-    const currentAngle = azimuthData.angle_pri
-
-    const vibrationStrength = getVibrationStrength(currentThrust, currentAngle)
+    const vibrationStrength = getVibrationStrength()
 
     if (vibrationStrength > 0) {
       console.log(`🚨 Sending vibration command: Strength ${vibrationStrength}`)
 
       // Send vibration command to backend
-      sendToBackend(
-        JSON.stringify({
-          command: 'set_vibration',
-          strength: vibrationStrength
-        })
-      )
+      sendToBackend({
+        command: 'set_vibration',
+        strength: vibrationStrength
+      })
 
       // Stop vibration after 2 seconds for "approaching" and "entering" cases
       if (vibrationStrength < 3) {
         setTimeout(() => {
-          sendToBackend(
-            JSON.stringify({
-              command: 'set_vibration',
-              strength: 0
-            })
-          )
-        }, 2000)
+          sendToBackend({
+            command: 'set_vibration',
+            strength: 0
+          })
+        }, 4000)
       }
     }
-  }, [azimuthData, sendToBackend])
+  }, [azimuthData, sendToBackend, getVibrationStrength])
 
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
@@ -181,16 +210,14 @@ export function Dashboard() {
     console.log(`Avg Speed: ${avgSpeed}, Avg RPM: ${avgRpm}`)
 
     // Send data to backend for storage
-    sendToBackend(
-      JSON.stringify({
-        command: 'stop_simulation',
-        avg_speed: avgSpeed,
-        avg_rpm: avgRpm,
-        total_consumption: totalConsumption,
-        run_time: runTime,
-        configuration_number: configurationNumber
-      })
-    )
+    sendToBackend({
+      command: 'stop_simulation',
+      avg_speed: avgSpeed,
+      avg_rpm: avgRpm,
+      total_consumption: totalConsumption,
+      run_time: runTime,
+      configuration_number: configurationNumber
+    })
 
     // Clear local storage for next run
     setSpeedData([])
@@ -216,29 +243,6 @@ export function Dashboard() {
       thrust_setpoint: 70,
       angle_setpoint: -30
     })
-  }
-
-  const getVibrationStrength = (thrust: number, angle: number): number => {
-    let strength = 0
-
-    // Check thrust alert zones
-    for (const advice of thrustAdvices) {
-      if (thrust >= advice.min && thrust <= advice.max) {
-        strength = advice.type === AdviceType.caution ? 2 : 1 // Caution → Medium, Advice → Light
-      }
-    }
-
-    // Check angle alert zones
-    for (const advice of angleAdvices) {
-      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
-        strength = Math.max(
-          strength,
-          advice.type === AdviceType.caution ? 3 : 2
-        ) // Caution → Strong, Advice → Medium
-      }
-    }
-
-    return strength
   }
 
   return (
