@@ -51,6 +51,13 @@
   min-width: 30%;
 }
 
+.azimuth-thruster {
+  height: 200px;
+  width: 400px;
+  min-height: 30%;
+  min-width: 30%;
+}
+
 .button-row {
   display: flex;
   justify-content: center; /* Center the buttons */
