@@ -11,7 +11,8 @@ import { DashboardData, SimulatorData } from '../types/DashboardData'
 import {
   toHeading,
   gramsToKiloGrams,
-  calculateAverage
+  calculateAverage,
+  newtonsToKiloNewtons
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
 
@@ -196,6 +197,7 @@ export function Dashboard() {
             <InstrumentField
               value={simulatorData.rpm}
               tag="RPM"
+              maxDigits={4}
               source="Simulator"
               hasSource={true}
             ></InstrumentField>
@@ -242,7 +244,7 @@ export function Dashboard() {
               hasSetPoint={true}
               value={simulatorData.xPos}
               degree={false}
-              maxDigits={3}
+              maxDigits={4}
               fractionDigits={1}
               tag="X"
               unit="m"
@@ -254,7 +256,7 @@ export function Dashboard() {
               hasSetPoint={true}
               value={simulatorData.yPos}
               degree={false}
-              maxDigits={3}
+              maxDigits={4}
               fractionDigits={1}
               tag="Y"
               unit="m"
@@ -290,16 +292,16 @@ export function Dashboard() {
               unit="kg"
               source="Simulator"
               hasSource={true}
-              maxDigits={6}
+              maxDigits={4}
               fractionDigits={2}
             ></InstrumentField>
             <InstrumentField
-              value={simulatorData.resistance}
+              value={newtonsToKiloNewtons(simulatorData.resistance)}
               tag="Res"
-              unit="N"
+              unit="KN"
               source="Simulator"
               hasSource={true}
-              maxDigits={6}
+              maxDigits={4}
               fractionDigits={1}
             ></InstrumentField>
           </div>
