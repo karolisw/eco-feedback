@@ -1,10 +1,12 @@
+import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { memo, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
 import { DashboardData, SimulatorData } from '../types/DashboardData'
@@ -15,6 +17,11 @@ import {
   newtonsToKiloNewtons
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
+
+type LocationState = {
+  angleAdvices?: AngleAdvice[]
+  thrustAdvices?: LinearAdvice[]
+}
 
 export function Dashboard() {
   const { simulationRunning, setSimulationRunning } = useSimulation() // Retrieving simulation running state from context
@@ -59,6 +66,25 @@ export function Dashboard() {
     'ws://127.0.0.1:8000/ws',
     initialData
   )
+
+  // Alert zones
+  const location = useLocation()
+  const state = location.state as LocationState | null // Type casting for safety
+
+  // Fetch advices from location state (set in startup page) or use default values
+  const angleAdvices: AngleAdvice[] =
+    state?.angleAdvices ??
+    ([
+      { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
+      { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
+    ] as AngleAdvice[])
+
+  const thrustAdvices: LinearAdvice[] =
+    state?.thrustAdvices ??
+    ([
+      { min: 20, max: 50, type: 'advice', hinted: true },
+      { min: 60, max: 100, type: 'caution', hinted: true }
+    ] as LinearAdvice[])
 
   useEffect(() => {
     if (azimuthData) {
@@ -219,6 +245,8 @@ export function Dashboard() {
               touching={true}
               atThrustSetpoint={false}
               atAngleSetpoint={false}
+              angleAdvices={angleAdvices}
+              thrustAdvices={thrustAdvices}
               onSetPointChange={handleSetPointChange}
             />
           </div>

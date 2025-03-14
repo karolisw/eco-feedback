@@ -24,7 +24,7 @@ class Dashboard:
         
         # Mock data generators
         self.mock_thrust = itertools.cycle([70,80,90,100,90,80,70])  # Simulates increasing & decreasing thrust
-        self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100,30, 15, 0, -15, -30, -45, -30, -15, 0])  # Oscillates rudder angle
+        self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100, 110, 120,130,140,150,160,180,170,160,150,130,120,110,100,90,80,70,60,50,40,30, 15, 0, -15, -30, -45, -60, -75, -90, -105,-120,-145,-160, -175, -160,-145,-120,-105,-90,-75,-60,-45, -30, -15, 0])  # Oscillates rudder angle
         
     def set_database(self, database: Database):
         """Assigns a database instance to the dashboard singleton."""

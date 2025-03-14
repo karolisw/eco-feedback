@@ -5,11 +5,18 @@ import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { SimulatorData } from '../types/DashboardData'
 import { ConfigResponse } from '../types/ConfigResponse'
 import { ConfigFiles } from '../types/ConfigFiles'
+import {
+  AngleAdvice,
+  AdviceType
+} from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
+
 import '../styles/startup.css'
 
 export function Startup() {
   const [configFiles, setConfigFiles] = useState<string[]>([])
   const [selectedConfig, setSelectedConfig] = useState<string>('')
+
   const navigate = useNavigate()
   const { setSimulationRunning } = useSimulation()
 
@@ -55,6 +62,42 @@ export function Startup() {
     void fetchConfigFiles()
   }, [])
 
+  // ------------------------------
+  // STATE FOR ALERT ZONES
+  // ------------------------------
+
+  const [angleAdvices, setAngleAdvices] = useState<AngleAdvice[]>([
+    { minAngle: 20, maxAngle: 50, type: AdviceType.advice, hinted: true },
+    { minAngle: 75, maxAngle: 100, type: AdviceType.caution, hinted: true }
+  ])
+
+  const [thrustAdvices, setThrustAdvices] = useState<LinearAdvice[]>([
+    { min: 20, max: 50, type: AdviceType.advice, hinted: true },
+    { min: 60, max: 100, type: AdviceType.caution, hinted: true }
+  ])
+
+  const updateAngleAdvice = <K extends keyof AngleAdvice>(
+    index: number,
+    key: K,
+    value: AngleAdvice[K]
+  ) => {
+    setAngleAdvices((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [key]: value }
+      return updated
+    })
+  }
+
+  const updateThrustAdvice = <K extends keyof LinearAdvice>(
+    index: number,
+    key: keyof LinearAdvice,
+    value: LinearAdvice[K]
+  ) => {
+    const updated = [...thrustAdvices]
+    updated[index] = { ...updated[index], [key]: value }
+    setThrustAdvices(updated)
+  }
+
   // Handle Start Simulation
   const startSimulation = async () => {
     try {
@@ -84,7 +127,10 @@ export function Startup() {
 
       // Now start the simulation
       sendToSimulator(JSON.stringify({ command: 'start_simulation' }))
-      void navigate('/simulator') // Move to dashboard
+      // Pass alert zones via navigation state
+      await navigate('/simulator', {
+        state: { angleAdvices, thrustAdvices }
+      })
     } catch (error) {
       console.error('Failed to start simulation:', error)
     }
@@ -93,31 +139,19 @@ export function Startup() {
   return (
     <div className="startup-container">
       <h1>Ship Simulator</h1>
-
-      {/* Information Section */}
       <div className="row">
         <div className="info-section">
           <h2>What is this Simulation?</h2>
           <p>
-            This simulator is designed to test eco-feedback mechanisms for
-            ships. It provides real-time data on fuel consumption, efficiency,
-            and other key parameters. The goal is to study how feedback can help
-            operators optimize energy use.
+            This simulator tests eco-feedback mechanisms for ships. It provides
+            real-time data on fuel consumption, efficiency, and other key
+            parameters.
           </p>
-          <h3>How to Control the Ship</h3>
-          <ul>
-            <li>
-              <b>Controller Support</b> - If a controller is connected, you can
-              use the joystick to steer.
-            </li>
-          </ul>
         </div>
 
-        {/* Configuration Selection */}
         <div className="config-selection">
-          <label htmlFor="config">Select Configuration:</label>
+          <label>Select Configuration:</label>
           <select
-            id="config"
             value={selectedConfig}
             onChange={(e) => setSelectedConfig(e.target.value)}
           >
@@ -127,16 +161,75 @@ export function Startup() {
               </option>
             ))}
           </select>
-          <button
-            onClick={() => void startSimulation()}
-            className="start-button"
-          >
-            Start Simulation
-          </button>
         </div>
       </div>
 
-      {/* Start Simulation Button */}
+      {/* Alert Zone Configuration */}
+      <div className="alert-config">
+        <h3>Set Alert Zones</h3>
+
+        <h4>Angle Alerts</h4>
+        {angleAdvices.map((advice, index) => (
+          <div key={index} className="alert-input">
+            <input
+              type="number"
+              value={advice.minAngle}
+              onChange={(e) =>
+                updateAngleAdvice(index, 'minAngle', Number(e.target.value))
+              }
+            />
+            <input
+              type="number"
+              value={advice.maxAngle}
+              onChange={(e) =>
+                updateAngleAdvice(index, 'maxAngle', Number(e.target.value))
+              }
+            />
+            <select
+              value={advice.type}
+              onChange={(e) =>
+                updateAngleAdvice(index, 'type', e.target.value as AdviceType)
+              }
+            >
+              <option value={AdviceType.advice}>Advice</option>
+              <option value={AdviceType.caution}>Caution</option>
+            </select>
+          </div>
+        ))}
+
+        <h4>Thrust Alerts</h4>
+        {thrustAdvices.map((advice, index) => (
+          <div key={index} className="alert-input">
+            <input
+              type="number"
+              value={advice.min}
+              onChange={(e) =>
+                updateThrustAdvice(index, 'min', Number(e.target.value))
+              }
+            />
+            <input
+              type="number"
+              value={advice.max}
+              onChange={(e) =>
+                updateThrustAdvice(index, 'max', Number(e.target.value))
+              }
+            />
+            <select
+              value={advice.type}
+              onChange={(e) =>
+                updateThrustAdvice(index, 'type', e.target.value as AdviceType)
+              }
+            >
+              <option value={AdviceType.advice}>Advice</option>
+              <option value={AdviceType.caution}>Caution</option>
+            </select>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={() => void startSimulation()} className="start-button">
+        Start Simulation
+      </button>
     </div>
   )
 }

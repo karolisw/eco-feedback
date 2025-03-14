@@ -2,6 +2,8 @@
 //import { ObcAzimuthThrusterLabeled } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster-labeled/azimuth-thruster-labeled'
 import { ObcAzimuthThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster/azimuth-thruster'
 import '../styles/dashboard.css'
+import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 
 type AzimuthThrusterProps = {
   thrust: number //  The thrust of the thruster in percent (0-100)
@@ -12,6 +14,8 @@ type AzimuthThrusterProps = {
   atThrustSetpoint: boolean // Whether the thruster is at the setpoint
   atAngleSetpoint: boolean // Whether the angle is at the setpoint
   onSetPointChange: (type: 'thrust' | 'angle', value: number) => void // Callback function
+  angleAdvices: AngleAdvice[]
+  thrustAdvices: LinearAdvice[]
 }
 
 export function AzimuthThruster({
@@ -22,6 +26,8 @@ export function AzimuthThruster({
   touching,
   atThrustSetpoint,
   atAngleSetpoint,
+  angleAdvices,
+  thrustAdvices,
   onSetPointChange
 }: AzimuthThrusterProps) {
   return (
@@ -34,6 +40,8 @@ export function AzimuthThruster({
         touching={touching}
         atThrustSetpoint={atThrustSetpoint}
         atAngleSetpoint={atAngleSetpoint}
+        thrustAdvices={thrustAdvices}
+        angleAdvices={angleAdvices}
       ></ObcAzimuthThruster>
       <div className="setpoint-controls">
         <label>Thrust Setpoint</label>
