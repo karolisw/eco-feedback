@@ -78,6 +78,15 @@ class Dashboard:
                         logger.info("Setpoint successfully updated.")
                     else:
                         logger.error("Failed to update setpoint.")
+                
+                elif data.get("command") == "set_vibration":
+                    vibration = data.get("strength", 0)
+                    logger.info(f"Received vibration command: {vibration}")
+                    success = self.controller.set_vibration(vibration)
+                    if success:
+                        logger.info("Vibration successfully updated.")
+                    else:
+                        logger.error("Failed to update vibration.")
 
                 elif data.get("command") == "stop_simulation":
                     avg_speed = data.get("avg_speed", 0)

@@ -217,6 +217,33 @@ class AzimuthController:
             print(f"[ERROR] Unexpected error while writing setpoints: {e}")
             return False
     
+    def set_vibration(self, vibration_value: int):
+        """
+        Writes the vibration value to the Modbus register.
+
+        :param vibration_value: The vibration value to set (0 - 3).
+        """
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set vibration.")
+            return False
+
+        try:
+            # HREG 01 is used to set the vibration value
+            vibration_register = 0x01 # TODO correct address could easily be "1" instead of "0x01"
+
+            # Write vibration value
+            self.client.write_register(address=vibration_register, value=bool(vibration_value), slave=self.slave_id)
+            print(f"[INFO] Set vibration value to {vibration_value} at register {vibration_register}")
+
+            return True
+
+        except ModbusIOException as e:
+            print(f"[ERROR] Modbus IO Exception while writing vibration: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Unexpected error while writing vibration: {e}")
+            return False
+        
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""
