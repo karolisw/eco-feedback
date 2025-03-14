@@ -33,6 +33,8 @@ export function MiniDashboard() {
             touching={true}
             atThrustSetpoint={false}
             atAngleSetpoint={false}
+            angleAdvices={[]}
+            thrustAdvices={[]}
           />
         </TabPanel>
         <TabPanel>
