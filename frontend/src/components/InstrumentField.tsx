@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { ObcInstrumentField } from '@oicl/openbridge-webcomponents-react/navigation-instruments/instrument-field/instrument-field'
 import { InstrumentFieldSize } from '@oicl/openbridge-webcomponents/dist/navigation-instruments/instrument-field/instrument-field'
 import '../styles/dashboard.css'
@@ -26,9 +27,32 @@ export function InstrumentField({
   tag = '',
   unit = '',
   source = '',
-  hasSource = false,
-  size = InstrumentFieldSize.small
+  hasSource = false
 }: InstrumentFieldProps) {
+  const [instrumentSize, setInstrumentSize] = useState<InstrumentFieldSize>(
+    InstrumentFieldSize.small
+  )
+
+  // Listening for changes in window size
+  useEffect(() => {
+    const updateSize = () => {
+      const width = window.innerWidth
+
+      if (width < 1200) {
+        setInstrumentSize(InstrumentFieldSize.small)
+      } else if (width >= 1200 && width < 1600) {
+        setInstrumentSize(InstrumentFieldSize.regular)
+      } else {
+        setInstrumentSize(InstrumentFieldSize.large)
+      }
+    }
+
+    updateSize() // Call once initially
+    window.addEventListener('resize', updateSize)
+
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
+
   return (
     <div className="instrument-field">
       <ObcInstrumentField
@@ -42,7 +66,7 @@ export function InstrumentField({
         unit={unit}
         source={source}
         hasSource={hasSource}
-        size={size}
+        size={instrumentSize}
       ></ObcInstrumentField>
     </div>
   )
