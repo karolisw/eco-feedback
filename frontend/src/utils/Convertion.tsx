@@ -20,3 +20,8 @@ export function calculateAverage(arr: number[]) {
     ? arr.reduce((sum, value) => sum + value, 0) / arr.length
     : 0
 }
+
+// Newtons to kiloNewtons
+export function newtonsToKiloNewtons(newtons: number) {
+  return newtons / 1000
+}

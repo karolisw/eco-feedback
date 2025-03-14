@@ -25,7 +25,7 @@ export function AzimuthThruster({
   onSetPointChange
 }: AzimuthThrusterProps) {
   return (
-    <div className="dashboard-component">
+    <div className="azimuth-thruster">
       <ObcAzimuthThruster
         thrust={thrust}
         angle={angle}
