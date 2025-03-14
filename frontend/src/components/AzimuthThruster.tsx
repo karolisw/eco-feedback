@@ -2,6 +2,9 @@
 //import { ObcAzimuthThrusterLabeled } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster-labeled/azimuth-thruster-labeled'
 import { ObcAzimuthThruster } from '@oicl/openbridge-webcomponents-react/navigation-instruments/azimuth-thruster/azimuth-thruster'
 import '../styles/dashboard.css'
+import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 
 type AzimuthThrusterProps = {
   thrust: number //  The thrust of the thruster in percent (0-100)
@@ -12,6 +15,8 @@ type AzimuthThrusterProps = {
   atThrustSetpoint: boolean // Whether the thruster is at the setpoint
   atAngleSetpoint: boolean // Whether the angle is at the setpoint
   onSetPointChange: (type: 'thrust' | 'angle', value: number) => void // Callback function
+  angleAdvices: AngleAdvice[]
+  thrustAdvices: LinearAdvice[]
 }
 
 export function AzimuthThruster({
@@ -24,6 +29,19 @@ export function AzimuthThruster({
   atAngleSetpoint,
   onSetPointChange
 }: AzimuthThrusterProps) {
+  // Define angle alert zones
+  const angleAdvices: AngleAdvice[] = [
+    { minAngle: 20, maxAngle: 50, type: AdviceType.advice, hinted: true },
+    { minAngle: 75, maxAngle: 100, type: AdviceType.caution, hinted: true },
+    { minAngle: -100, maxAngle: -75, type: AdviceType.caution, hinted: true }
+  ]
+
+  // Define angle alert zones
+  const thrustAdvices: LinearAdvice[] = [
+    { min: 20, max: 50, type: AdviceType.advice, hinted: true },
+    { min: 60, max: 100, type: AdviceType.caution, hinted: true }
+  ]
+
   return (
     <div className="azimuth-thruster">
       <ObcAzimuthThruster
@@ -34,6 +52,8 @@ export function AzimuthThruster({
         touching={touching}
         atThrustSetpoint={atThrustSetpoint}
         atAngleSetpoint={atAngleSetpoint}
+        thrustAdvices={thrustAdvices}
+        angleAdvices={angleAdvices}
       ></ObcAzimuthThruster>
       <div className="setpoint-controls">
         <label>Thrust Setpoint</label>
