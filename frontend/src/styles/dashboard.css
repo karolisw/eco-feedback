@@ -1,222 +1,226 @@
-/* Ensure the dashboard takes up the full screen */
-.dashboard {
-  display: flex;
-  flex-direction: row; /* Side-by-side layout */
-  height: 100vh; /* Full viewport height */
-  width: 100vw; /* Full viewport width */
-  overflow: hidden;
-}
+  /* Ensure the dashboard takes up the full screen */
+  .dashboard {
+    display: flex;
+    flex-direction: row; /* Side-by-side layout */
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    overflow: hidden;
+  }
 
-/* Fix the simulator panel to take full available space */
-.simulator-panel {
-  width: 70%;
-  height: 100vh; /* Full viewport height */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: black; /* Debugging: Ensure it's visible */
-  position: relative; /* Ensures child iframe can stretch */
-}
+  /* Fix the simulator panel to take full available space */
+  .simulator-panel {
+    flex: 1;
+    min-width: 60%;
+    max-width: 70%;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black; /* Debugging: Ensure it's visible */
+    position: relative; /* Ensures child iframe can stretch */
+  }
 
-/* Ensure the iframe fills the simulator panel //TODO 509px */
-.simulator-panel iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
-/* UI Panel: Right Side (Azimuth Thruster + Data) */
-.ui-panel {
-  width: 30%;
-  height: 100%;
-  display: flex;
-  flex-direction: column; /* Ensure vertical stacking */
-  padding: 20px; /* Adds spacing */
-  gap: 10px; /* Adds space between components */
-  background-color: #f8f8f8; /* Light background */
-  overflow-y: auto; /* Allows scrolling if too much content */
-  text-align: center;
-}
+  /* Ensure the iframe fills the simulator panel //TODO 509px */
+  .simulator-panel iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  /* UI Panel: Right Side (Azimuth Thruster + Data) */
+  .ui-panel {
+    flex: 0.3; /* Ensures it is 30% of the width */
+    min-width: 30%;
+    max-width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; /* Ensure vertical stacking */
+    padding: 20px; /* Adds spacing */
+    gap: 10px; /* Adds space between components */
+    background-color: #f8f8f8; /* Light background */
+    overflow-y: auto; /* Allows scrolling if too much content */
+    text-align: center;
+  }
 
-.ui-panel h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-  color: #333;
-}
+  .ui-panel h3 {
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #333;
+  }
 
-.dashboard-component {
-  height: 150px;
-  width: 300px;
-  min-height: 30%;
-  min-width: 30%;
-}
+  .dashboard-component {
+    height: 150px;
+    width: 300px;
+    min-height: 30%;
+    min-width: 30%;
+  }
 
-.azimuth-thruster {
-  height: 200px;
-  width: 400px;
-  min-height: 30%;
-  min-width: 30%;
-}
+  .azimuth-thruster {
+    height: 400px;
+    width: 100%;
+    max-height: 35vh; /* Allow it to scale dynamically */
+    min-height: 200px;
+  }
 
-.button-row {
-  display: flex;
-  justify-content: center; /* Center the buttons */
-  gap: 15px; /* Add space between buttons */
-  margin-bottom: 15px; /* Add space below the buttons */
-}
+  .button-row {
+    display: flex;
+    justify-content: center; /* Center the buttons */
+    gap: 15px; /* Add space between buttons */
+    margin-bottom: 15px; /* Add space below the buttons */
+  }
 
-.button {
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
+  .button {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
 
-.button:hover {
-  opacity: 0.8;
-}
+  .button:hover {
+    opacity: 0.8;
+  }
 
-.button:active {
-  transform: scale(0.98);
-}
+  .button:active {
+    transform: scale(0.98);
+  }
 
-/* Start Button */
-.button:first-child {
-  background-color: #4caf50; /* Green */
-  color: white;
-}
+  /* Start Button */
+  .button:first-child {
+    background-color: #4caf50; /* Green */
+    color: white;
+  }
 
-/* Stop Button */
-.button:last-child {
-  background-color: #d9534f; /* Red */
-  color: white;
-}
+  /* Stop Button */
+  .button:last-child {
+    background-color: #d9534f; /* Red */
+    color: white;
+  }
 
-/* Styling for the AzimuthThruster Component TODO: not in use 
-.azimuth-thruster-container {
+  /* Styling for the AzimuthThruster Component TODO: not in use 
+  .azimuth-thruster-container {
+      width: 90%;
+      max-width: 500px;// Prevents it from taking up the full width
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+  }
+  */
+  /* Information panel */
+  .info-panel {
+    margin-top: 20px;
     width: 90%;
-    max-width: 500px;// Prevents it from taking up the full width
-    padding: 20px;
+    max-width: 500px;
+    padding: 15px;
     background: white;
     border-radius: 10px;
     box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: left;
+  }
+
+  .info-panel h3 {
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #333;
+  }
+
+  .info-panel p {
+    font-size: 14px;
+    margin: 2px 0;
+    color: #555;
+  }
+
+  .info-card {
+    width: 90%;
+    max-width: 400px;
+    padding: 15px;
+    margin-bottom: 15px;
+    color: #333;
+  }
+
+  .info-card h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .info-card p {
+    font-size: 14px;
+    margin: 5px 0;
+    text-align: left;
+  }
+
+  .mini-dashboard {
+    height: 420px;
+    width: 640px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-*/
-/* Information panel */
-.info-panel {
-  margin-top: 20px;
-  width: 90%;
-  max-width: 500px;
-  padding: 15px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-  text-align: left;
-}
+    flex-direction: column;
+  }
 
-.info-panel h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-  color: #333;
-}
+  /* Tab text is grey when not selected and black when selected */
+  .react-tabs__tab {
+    color: grey;
+    font-weight: 500;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: color 0.3s ease-in-out;
+    border: none !important;
+    box-shadow: none !important;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
 
-.info-panel p {
-  font-size: 14px;
-  margin: 2px 0;
-  color: #555;
-}
+  .react-tabs__tab--selected {
+    color: black !important;
+    font-weight: bold;
+    background-color: #f7f7f7 !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
 
-.info-card {
-  width: 90%;
-  max-width: 400px;
-  padding: 15px;
-  margin-bottom: 15px;
-  color: #333;
-}
+  .react-tabs__tab--selected::after {
+    display: none !important;
+  }
 
-.info-card h3 {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
-}
+  .instrument-field {
+    padding: 4px;
+  }
 
-.info-card p {
-  font-size: 14px;
-  margin: 5px 0;
-  text-align: left;
-}
+  /* Make sure the tabs are inside the dashboard */
+  .react-tabs__tab-list {
+    width: 100%;
+    min-height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background-color: #f7f7f7; /* Ensure it blends with the dashboard */
+    position: relative; /* Keeps it inside the dashboard */
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0; /* Moves it to the bottom */
+    border-bottom: none !important;
+  }
 
-.mini-dashboard {
-  height: 420px;
-  width: 640px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
+  .top-bar {
+    width: 100% !important;
+    padding: 10px;
+  }
 
-/* Tab text is grey when not selected and black when selected */
-.react-tabs__tab {
-  color: grey;
-  font-weight: 500;
-  padding: 10px 20px;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: color 0.3s ease-in-out;
-  border: none !important;
-  box-shadow: none !important;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-.react-tabs__tab--selected {
-  color: black !important;
-  font-weight: bold;
-  background-color: #f7f7f7 !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-.react-tabs__tab--selected::after {
-  display: none !important;
-}
-
-.instrument-field {
-  padding: 4px;
-}
-
-/* Make sure the tabs are inside the dashboard */
-.react-tabs__tab-list {
-  width: 100%;
-  min-height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  background-color: #f7f7f7; /* Ensure it blends with the dashboard */
-  position: relative; /* Keeps it inside the dashboard */
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 0; /* Moves it to the bottom */
-  border-bottom: none !important;
-}
-
-.top-bar {
-  width: 100% !important;
-  padding: 10px;
-}
-
-hr.solid {
-  width: 80%;
-  border-top: 1px solid rgb(207, 207, 207);
-}
+  hr.solid {
+    width: 80%;
+    border-top: 1px solid rgb(207, 207, 207);
+  }
