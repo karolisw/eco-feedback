@@ -1,5 +1,6 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
+import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
@@ -128,6 +129,39 @@ export function Dashboard() {
     }
   }, [simulatorData])
 
+  useEffect(() => {
+    if (!azimuthData) return
+
+    const currentThrust = azimuthData.position_pri
+    const currentAngle = azimuthData.angle_pri
+
+    const vibrationStrength = getVibrationStrength(currentThrust, currentAngle)
+
+    if (vibrationStrength > 0) {
+      console.log(`🚨 Sending vibration command: Strength ${vibrationStrength}`)
+
+      // Send vibration command to backend
+      sendToBackend(
+        JSON.stringify({
+          command: 'set_vibration',
+          strength: vibrationStrength
+        })
+      )
+
+      // Stop vibration after 2 seconds for "approaching" and "entering" cases
+      if (vibrationStrength < 3) {
+        setTimeout(() => {
+          sendToBackend(
+            JSON.stringify({
+              command: 'set_vibration',
+              strength: 0
+            })
+          )
+        }, 2000)
+      }
+    }
+  }, [azimuthData, sendToBackend])
+
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
     sendToSimulator(JSON.stringify({ command: 'stop_simulation' }))
@@ -182,6 +216,29 @@ export function Dashboard() {
       thrust_setpoint: 70,
       angle_setpoint: -30
     })
+  }
+
+  const getVibrationStrength = (thrust: number, angle: number): number => {
+    let strength = 0
+
+    // Check thrust alert zones
+    for (const advice of thrustAdvices) {
+      if (thrust >= advice.min && thrust <= advice.max) {
+        strength = advice.type === AdviceType.caution ? 2 : 1 // Caution → Medium, Advice → Light
+      }
+    }
+
+    // Check angle alert zones
+    for (const advice of angleAdvices) {
+      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
+        strength = Math.max(
+          strength,
+          advice.type === AdviceType.caution ? 3 : 2
+        ) // Caution → Strong, Advice → Medium
+      }
+    }
+
+    return strength
   }
 
   return (
