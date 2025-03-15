@@ -52,86 +52,76 @@ class Dashboard:
                 if formatted_data and formatted_data != self.latest_data and self.clients:
                     logger.info("New Azimuth data, broadcasting...")
                     self.latest_data = formatted_data
-                    await self.broadcast_data()
-                    
+                
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
-            await asyncio.sleep(2)  # Ensures it doesn't flood the system
-
-    # TODO not used... remove?
-    async def handle_client_messages(self, websocket: WebSocket):
-        """Handles incoming messages from the frontend asynchronously."""
+            await asyncio.sleep(1)  # Ensures it doesn't flood the system
+            
+    async def handle_client_messages(self, websocket: WebSocket, message: str):
+        """Handles incoming WebSocket messages and processes commands."""
         try:
-            async for message in websocket.iter_text():
-                logger.info(f"Received WebSocket message: {message}")  # ✅ Debugging message
-                
-                data = json.loads(message)
+            logger.info(f"Received WebSocket message: {message}")  
 
-                if data.get("command") == "set_setpoint":
-                    thrust_setpoint = data.get("thrust_setpoint", 50)
-                    angle_setpoint = data.get("angle_setpoint", 0)
-                    logger.info(f"Received setpoint update - Thrust: {thrust_setpoint}, Angle: {angle_setpoint}")
+            data = json.loads(message)  # Parse JSON data
 
-                    success = self.controller.set_setpoint(thrust_setpoint, angle_setpoint)
-                    if success:
-                        logger.info("Setpoint successfully updated.")
-                    else:
-                        logger.error("Failed to update setpoint.")
-                
-                elif data.get("command") == "set_vibration":
-                    vibration = data.get("strength", 0)
-                    logger.info(f"Received vibration command: {vibration}")
-                    success = self.controller.set_vibration(vibration)
-                    if success:
-                        logger.info("Vibration successfully updated.")
-                    else:
-                        logger.error("Failed to update vibration.")
+            # Handle setpoint updates
+            if data.get("command") == "set_setpoint":
+                thrust_setpoint = data.get("thrust_setpoint", 50)
+                angle_setpoint = data.get("angle_setpoint", 0)
+                logger.info(f"Updating setpoints → Thrust: {thrust_setpoint}, Angle: {angle_setpoint}")
 
-                elif data.get("command") == "stop_simulation":
-                    avg_speed = data.get("avg_speed", 0)
-                    avg_rpm = data.get("avg_rpm", 0)
-                    total_consumption = data.get("total_consumption", 0)
-                    run_time = data.get("run_time", 0)
-                    configuration_number = data.get("configuration_number", 1)
+                success = self.controller.set_setpoint(thrust_setpoint, angle_setpoint)
+                if success:
+                    logger.info("Setpoints successfully updated.")
+                else:
+                    logger.error("Failed to update setpoints.")
 
-                    logger.info("Received stop simulation request.")
-                    
-                    await self.database.store_data(
-                        total_consumption=total_consumption,
-                        run_time=run_time,
-                        configuration_number=configuration_number,
-                        average_speed=avg_speed,
-                        average_rpm=avg_rpm
-                    )
-                    
-                    logger.info("Simulation data stored successfully.")
+            # Handle vibration updates
+            elif data.get("command") == "set_vibration":
+                vibration = data.get("strength", 0)
+                logger.info(f"Setting vibration to {vibration}")
+
+                success = self.controller.set_vibration(vibration)
+                if success:
+                    logger.info("Vibration successfully updated.")
+                else:
+                    logger.error("Failed to update vibration.")
+
+            # Handle stop simulation command
+            elif data.get("command") == "stop_simulation":
+                avg_speed = data.get("avg_speed", 0)
+                avg_rpm = data.get("avg_rpm", 0)
+                total_consumption = data.get("total_consumption", 0)
+                run_time = data.get("run_time", 0)
+                configuration_number = data.get("configuration_number", 1)
+
+                logger.info("Stop simulation request received.")
+
+                await self.database.store_data(
+                    total_consumption=total_consumption,
+                    run_time=run_time,
+                    configuration_number=configuration_number,
+                    average_speed=avg_speed,
+                    average_rpm=avg_rpm
+                )
+
+                logger.info("Simulation data stored successfully.")
 
         except Exception as e:
-            logger.error(f"WebSocket error while receiving messages: {e}")
+            logger.error(f"Error processing WebSocket message: {e}")
 
-
-    async def broadcast_data(self):
-        """Immediately send the latest data to all connected clients."""
-        disconnected_clients = set()
-
-        if self.latest_data and self.clients:
-            for client in list(self.clients):
-                try:
-                    logger.info(f"Sending formatted data to client: {client.client}")
-                    await client.send_json(self.latest_data)
-                except Exception as e:
-                    logger.error(f"Error sending data: {e}")
-                    disconnected_clients.add(client)
-                    
-        self.clients -= disconnected_clients
-
-    # TODO not used... remove?
-    async def remove_client(self, websocket: WebSocket):
-        """Removes a disconnected client safely."""
-        if websocket in self.clients:
-            self.clients.remove(websocket)
-            logger.info(f"Client {websocket.client} removed.")
+    async def send_live_updates(self, websocket: WebSocket):
+        """Continuously send azimuth data to the frontend."""
+        try:
+            while True:
+                if self.latest_data:
+                    logger.info(f"Sending live azimuth data: {self.latest_data}")
+                    await websocket.send_json(self.latest_data)
+                
+                await asyncio.sleep(1)  # Prevent flooding
+        except Exception as e:
+            logger.error(f"Error sending live updates: {e}")
 
     def format_data(self, raw_data):
         """Transforms raw register data into the required DashboardData format."""
@@ -151,28 +141,25 @@ class Dashboard:
     
     
     async def websocket_endpoint(self, websocket: WebSocket):
-        """Handles WebSocket connections and continuously sends the latest data."""
+        """Handles WebSocket connections, processes messages, and sends updates."""
         await websocket.accept()
         self.clients.add(websocket)
         logger.info(f"WebSocket client connected: {websocket.client}")
 
         try:
-            while True:
-                # Receive messages
-                data = await websocket.receive_text()
-                logger.info(f"Received message: {data}")
+            # Start sending live data updates to the connected client
+            send_task = asyncio.create_task(self.send_live_updates(websocket))
 
-                # Send response back
-                await websocket.send_text(f"Echo: {data}")
+            # Listen for incoming messages
+            async for message in websocket.iter_text():
+                await self.handle_client_messages(websocket, message)
 
         except Exception as e:
             logger.error(f"WebSocket error: {e}")
         finally:
             self.clients.discard(websocket)
+            send_task.cancel()  # Stop sending updates when client disconnects
             logger.info(f"Client {websocket.client} disconnected.")
-
-        
-
 
 # Global dashboard instance (singleton)
 dashboard = Dashboard()
