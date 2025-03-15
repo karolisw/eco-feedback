@@ -11,6 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
 import { DashboardData, SimulatorData } from '../types/DashboardData'
+import { AlertConfig } from '../types/AlertConfig'
 import {
   toHeading,
   gramsToKiloGrams,
@@ -22,6 +23,7 @@ import { useSimulation } from '../hooks/useSimulation'
 type LocationState = {
   angleAdvices?: AngleAdvice[]
   thrustAdvices?: LinearAdvice[]
+  alertConfig?: AlertConfig
 }
 
 export function Dashboard() {
@@ -93,6 +95,25 @@ export function Dashboard() {
     [state?.thrustAdvices]
   )
 
+  const alertConfig: AlertConfig = useMemo(
+    () =>
+      state?.alertConfig ||
+      ({
+        vibrationApproach: 1,
+        vibrationEnter: 2,
+        vibrationRemain: 3,
+        resistanceApproach: 0,
+        resistanceEnter: 1,
+        resistanceRemain: 2,
+        detents: false,
+        feedbackDuration: 4000,
+        enableVibration: true,
+        enableResistance: false,
+        enableDetents: false
+      } as AlertConfig),
+    [state?.alertConfig]
+  )
+
   useEffect(() => {
     if (azimuthData) {
       // Prepare new command
@@ -135,6 +156,7 @@ export function Dashboard() {
     }
   }, [simulatorData])
 
+  // Function to determine vibration strength based on alertConfig
   const getVibrationStrength = useCallback(() => {
     let strength = 0
     const thrust = azimuthData.position_pri
@@ -143,7 +165,10 @@ export function Dashboard() {
     // Check thrust alert zones
     for (const advice of thrustAdvices) {
       if (thrust >= advice.min && thrust <= advice.max) {
-        strength = advice.type === AdviceType.caution ? 2 : 1 // Caution → Medium, Advice → Light
+        strength =
+          advice.type === AdviceType.caution
+            ? alertConfig.vibrationEnter
+            : alertConfig.vibrationApproach
       }
     }
 
@@ -152,8 +177,10 @@ export function Dashboard() {
       if (angle >= advice.minAngle && angle <= advice.maxAngle) {
         strength = Math.max(
           strength,
-          advice.type === AdviceType.caution ? 3 : 2
-        ) // Caution → Strong, Advice → Medium
+          advice.type === AdviceType.caution
+            ? alertConfig.vibrationRemain
+            : alertConfig.vibrationEnter
+        )
       }
     }
 
@@ -162,15 +189,17 @@ export function Dashboard() {
     angleAdvices,
     azimuthData.angle_pri,
     azimuthData.position_pri,
-    thrustAdvices
+    thrustAdvices,
+    alertConfig
   ])
 
   useEffect(() => {
+    console.log('azimuth data is: ', azimuthData)
     if (!azimuthData) return
 
     const vibrationStrength = getVibrationStrength()
 
-    if (vibrationStrength > 0) {
+    if (vibrationStrength > 0 && alertConfig.enableVibration) {
       console.log(`🚨 Sending vibration command: Strength ${vibrationStrength}`)
 
       // Send vibration command to backend
@@ -179,17 +208,28 @@ export function Dashboard() {
         strength: vibrationStrength
       })
 
-      // Stop vibration after 2 seconds for "approaching" and "entering" cases
-      if (vibrationStrength < 3) {
+      // Stop vibration after "feedbackDuration" seconds for "approaching" and "entering" cases
+      if (vibrationStrength < alertConfig.vibrationRemain) {
+        // TODO this depends on the meaning of "vibrationRemain"
+        console.log(
+          `🚨 Stopping vibration after ${alertConfig.feedbackDuration}ms`
+        )
         setTimeout(() => {
           sendToBackend({
             command: 'set_vibration',
             strength: 0
           })
-        }, 4000)
+        }, alertConfig.feedbackDuration)
       }
     }
-  }, [azimuthData, sendToBackend, getVibrationStrength])
+  }, [
+    azimuthData,
+    sendToBackend,
+    getVibrationStrength,
+    alertConfig.enableVibration,
+    alertConfig.vibrationRemain,
+    alertConfig.feedbackDuration
+  ])
 
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
