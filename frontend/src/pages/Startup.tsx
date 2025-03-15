@@ -12,6 +12,7 @@ import {
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 
 import '../styles/startup.css'
+import { AlertConfig } from '../types/AlertConfig'
 
 export function Startup() {
   const [configFiles, setConfigFiles] = useState<string[]>([])
@@ -19,6 +20,21 @@ export function Startup() {
 
   const navigate = useNavigate()
   const { setSimulationRunning } = useSimulation()
+
+  // Alert zone settings
+  const [alertConfig, setAlertConfig] = useState<AlertConfig>({
+    vibrationApproach: 1,
+    vibrationEnter: 2,
+    vibrationRemain: 3,
+    resistanceApproach: 0,
+    resistanceEnter: 1,
+    resistanceRemain: 2,
+    detents: false,
+    feedbackDuration: 4000, // Default 4s
+    enableVibration: true,
+    enableResistance: false,
+    enableDetents: false
+  })
 
   const initialSimData: SimulatorData = {
     heading: 90,
@@ -129,7 +145,7 @@ export function Startup() {
       sendToSimulator(JSON.stringify({ command: 'start_simulation' }))
       // Pass alert zones via navigation state
       await navigate('/simulator', {
-        state: { angleAdvices, thrustAdvices }
+        state: { angleAdvices, thrustAdvices, alertConfig }
       })
     } catch (error) {
       console.error('Failed to start simulation:', error)
@@ -166,7 +182,7 @@ export function Startup() {
 
       {/* Alert Zone Configuration */}
       <div className="alert-config">
-        <h3>Set Alert Zones</h3>
+        <h3>Configure Alert Zones</h3>
 
         <h4>Angle Alerts</h4>
         {angleAdvices.map((advice, index) => (
@@ -196,7 +212,6 @@ export function Startup() {
             </select>
           </div>
         ))}
-
         <h4>Thrust Alerts</h4>
         {thrustAdvices.map((advice, index) => (
           <div key={index} className="alert-input">
@@ -225,11 +240,104 @@ export function Startup() {
             </select>
           </div>
         ))}
-      </div>
+        <div className="alert-config-container">
+          <h3>Haptic Feedback Configuration</h3>
 
-      <button onClick={() => void startSimulation()} className="start-button">
-        Start Simulation
-      </button>
+          {[
+            {
+              key: 'vibrationApproach',
+              label: 'Vibration (Approaching)',
+              tooltip: 'Vibration strength when approaching alert zone'
+            },
+            {
+              key: 'vibrationEnter',
+              label: 'Vibration (Entering)',
+              tooltip: 'Vibration strength when entering alert zone'
+            },
+            {
+              key: 'vibrationRemain',
+              label: 'Vibration (Remaining)',
+              tooltip: 'Vibration strength when remaining in alert zone'
+            },
+            {
+              key: 'feedbackDuration',
+              label: 'Feedback Duration (ms)',
+              tooltip: 'How long feedback lasts (except remaining inside)'
+            }
+          ].map(({ key, label, tooltip }) => (
+            <div key={key} className="label-container">
+              <div className="label-wrapper">
+                <span className="info-icon" data-tooltip={tooltip}>
+                  ℹ
+                </span>
+                <label>{label}</label>
+              </div>
+              <input
+                type="number"
+                value={
+                  typeof alertConfig[key as keyof AlertConfig] === 'boolean'
+                    ? Number(alertConfig[key as keyof AlertConfig])
+                    : alertConfig[key as keyof AlertConfig].toString()
+                }
+                onChange={(e) =>
+                  setAlertConfig((prev) => ({
+                    ...prev,
+                    [key]: Number(e.target.value)
+                  }))
+                }
+              />
+            </div>
+          ))}
+
+          {/* Checkbox options */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Enable vibration feedback"
+              >
+                ℹ
+              </span>
+              <label>Enable Vibration</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.enableVibration}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  enableVibration: !prev.enableVibration
+                }))
+              }
+            />
+          </div>
+
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Enable resistance feedback"
+              >
+                ℹ
+              </span>
+              <label>Enable Resistance</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.enableResistance}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  enableResistance: !prev.enableResistance
+                }))
+              }
+            />
+          </div>
+        </div>
+        <button onClick={() => void startSimulation()} className="start-button">
+          Start Simulation
+        </button>
+      </div>
     </div>
   )
 }
