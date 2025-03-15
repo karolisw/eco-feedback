@@ -200,7 +200,7 @@ export function Dashboard() {
     const vibrationStrength = getVibrationStrength()
 
     if (vibrationStrength > 0 && alertConfig.enableVibration) {
-      console.log(`🚨 Sending vibration command: Strength ${vibrationStrength}`)
+      console.log(`Sending vibration command: Strength ${vibrationStrength}`)
 
       // Send vibration command to backend
       sendToBackend({
@@ -212,7 +212,7 @@ export function Dashboard() {
       if (vibrationStrength < alertConfig.vibrationRemain) {
         // TODO this depends on the meaning of "vibrationRemain"
         console.log(
-          `🚨 Stopping vibration after ${alertConfig.feedbackDuration}ms`
+          `Stopping vibration after ${alertConfig.feedbackDuration}ms`
         )
         setTimeout(() => {
           sendToBackend({
@@ -268,7 +268,7 @@ export function Dashboard() {
   }
 
   const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
-    console.log(`🛠 Attempting to set ${type} to`, value) // ✅ Debugging log
+    console.log(`Attempting to set ${type} to`, value)
 
     // Update state immediately
     if (type === 'thrust') {
