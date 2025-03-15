@@ -1,6 +1,10 @@
 # Database connection and query handling - This is where the runs are stored and retrieved from the database
+import logging
 import sqlite3
 import asyncio
+
+logger = logging.getLogger("database")
+logging.basicConfig(level=logging.INFO)
 
 class Database:
     def __init__(self, db_name="runs.db"):
@@ -31,6 +35,7 @@ class Database:
             self._store_data_sync, 
             run_time, total_consumption, configuration_number, average_speed, average_rpm
         )
+        logger.info("Simulation data stored successfully.")
 
     def _store_data_sync(self, run_time, total_consumption, configuration_number, average_speed, average_rpm):
         """Insert a new record into the database (blocking function)."""
