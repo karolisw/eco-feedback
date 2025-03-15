@@ -7,6 +7,7 @@
   height: 100vh;
   width: 100vw;
   color: #333;
+  overflow: auto;
 }
 
 /* Title Styling */
@@ -150,4 +151,84 @@
   .start-button {
     width: 100%;
   }
+}
+
+
+/* Alert Configuration Panel */
+.alert-config-container {
+  margin-top: 20px;
+  padding: 15px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content:stretch;
+  gap: 10px;
+  width: 90%;
+  max-width: 600px;
+}
+
+/* Ensures the labels and info icons are side by side */
+.label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and label */
+  width: 200px; /* Ensures consistency in width */
+}
+
+/* Aligns labels and inputs in a column */
+.label-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Ensures all inputs are the same width and align vertically */
+.label-container input {
+  flex: 1;  /* Makes inputs expand evenly */
+  min-width: 100px;
+  max-width: 150px;
+  padding: 5px;
+}
+
+/* Ensures checkboxes are aligned correctly */
+.label-container input[type='checkbox'] {
+  width: auto;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 2px;
+}
+
+/* Aligns info icon properly */
+.info-icon {
+  cursor: pointer;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  position: relative;
+}
+
+/* Tooltip for info icon */
+.info-icon:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: 120%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 5px;
+  font-size: 12px;
+  border-radius: 5px;
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.3s;
 }

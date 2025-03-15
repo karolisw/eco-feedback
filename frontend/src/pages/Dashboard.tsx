@@ -1,15 +1,17 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
+import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
 import { DashboardData, SimulatorData } from '../types/DashboardData'
+import { AlertConfig } from '../types/AlertConfig'
 import {
   toHeading,
   gramsToKiloGrams,
@@ -21,6 +23,7 @@ import { useSimulation } from '../hooks/useSimulation'
 type LocationState = {
   angleAdvices?: AngleAdvice[]
   thrustAdvices?: LinearAdvice[]
+  alertConfig?: AlertConfig
 }
 
 export function Dashboard() {
@@ -72,19 +75,44 @@ export function Dashboard() {
   const state = location.state as LocationState | null // Type casting for safety
 
   // Fetch advices from location state (set in startup page) or use default values
-  const angleAdvices: AngleAdvice[] =
-    state?.angleAdvices ??
-    ([
-      { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
-      { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
-    ] as AngleAdvice[])
+  const angleAdvices: AngleAdvice[] = useMemo(
+    () =>
+      state?.angleAdvices ??
+      ([
+        { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
+        { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
+      ] as AngleAdvice[]),
+    [state?.angleAdvices]
+  )
 
-  const thrustAdvices: LinearAdvice[] =
-    state?.thrustAdvices ??
-    ([
-      { min: 20, max: 50, type: 'advice', hinted: true },
-      { min: 60, max: 100, type: 'caution', hinted: true }
-    ] as LinearAdvice[])
+  const thrustAdvices: LinearAdvice[] = useMemo(
+    () =>
+      state?.thrustAdvices ??
+      ([
+        { min: 20, max: 50, type: 'advice', hinted: true },
+        { min: 60, max: 100, type: 'caution', hinted: true }
+      ] as LinearAdvice[]),
+    [state?.thrustAdvices]
+  )
+
+  const alertConfig: AlertConfig = useMemo(
+    () =>
+      state?.alertConfig ||
+      ({
+        vibrationApproach: 1,
+        vibrationEnter: 2,
+        vibrationRemain: 3,
+        resistanceApproach: 0,
+        resistanceEnter: 1,
+        resistanceRemain: 2,
+        detents: false,
+        feedbackDuration: 4000,
+        enableVibration: true,
+        enableResistance: false,
+        enableDetents: false
+      } as AlertConfig),
+    [state?.alertConfig]
+  )
 
   useEffect(() => {
     if (azimuthData) {
@@ -128,6 +156,81 @@ export function Dashboard() {
     }
   }, [simulatorData])
 
+  // Function to determine vibration strength based on alertConfig
+  const getVibrationStrength = useCallback(() => {
+    let strength = 0
+    const thrust = azimuthData.position_pri
+    const angle = azimuthData.angle_pri
+
+    // Check thrust alert zones
+    for (const advice of thrustAdvices) {
+      if (thrust >= advice.min && thrust <= advice.max) {
+        strength =
+          advice.type === AdviceType.caution
+            ? alertConfig.vibrationEnter
+            : alertConfig.vibrationApproach
+      }
+    }
+
+    // Check angle alert zones
+    for (const advice of angleAdvices) {
+      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
+        strength = Math.max(
+          strength,
+          advice.type === AdviceType.caution
+            ? alertConfig.vibrationRemain
+            : alertConfig.vibrationEnter
+        )
+      }
+    }
+
+    return strength
+  }, [
+    angleAdvices,
+    azimuthData.angle_pri,
+    azimuthData.position_pri,
+    thrustAdvices,
+    alertConfig
+  ])
+
+  useEffect(() => {
+    console.log('azimuth data is: ', azimuthData)
+    if (!azimuthData) return
+
+    const vibrationStrength = getVibrationStrength()
+
+    if (vibrationStrength > 0 && alertConfig.enableVibration) {
+      console.log(`Sending vibration command: Strength ${vibrationStrength}`)
+
+      // Send vibration command to backend
+      sendToBackend({
+        command: 'set_vibration',
+        strength: vibrationStrength
+      })
+
+      // Stop vibration after "feedbackDuration" seconds for "approaching" and "entering" cases
+      if (vibrationStrength < alertConfig.vibrationRemain) {
+        // TODO this depends on the meaning of "vibrationRemain"
+        console.log(
+          `Stopping vibration after ${alertConfig.feedbackDuration}ms`
+        )
+        setTimeout(() => {
+          sendToBackend({
+            command: 'set_vibration',
+            strength: 0
+          })
+        }, alertConfig.feedbackDuration)
+      }
+    }
+  }, [
+    azimuthData,
+    sendToBackend,
+    getVibrationStrength,
+    alertConfig.enableVibration,
+    alertConfig.vibrationRemain,
+    alertConfig.feedbackDuration
+  ])
+
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
     sendToSimulator(JSON.stringify({ command: 'stop_simulation' }))
@@ -147,16 +250,14 @@ export function Dashboard() {
     console.log(`Avg Speed: ${avgSpeed}, Avg RPM: ${avgRpm}`)
 
     // Send data to backend for storage
-    sendToBackend(
-      JSON.stringify({
-        command: 'stop_simulation',
-        avg_speed: avgSpeed,
-        avg_rpm: avgRpm,
-        total_consumption: totalConsumption,
-        run_time: runTime,
-        configuration_number: configurationNumber
-      })
-    )
+    sendToBackend({
+      command: 'stop_simulation',
+      avg_speed: avgSpeed,
+      avg_rpm: avgRpm,
+      total_consumption: totalConsumption,
+      run_time: runTime,
+      configuration_number: configurationNumber
+    })
 
     // Clear local storage for next run
     setSpeedData([])
@@ -167,7 +268,7 @@ export function Dashboard() {
   }
 
   const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
-    console.log(`🛠 Attempting to set ${type} to`, value) // ✅ Debugging log
+    console.log(`Attempting to set ${type} to`, value)
 
     // Update state immediately
     if (type === 'thrust') {
