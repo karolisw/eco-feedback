@@ -20,6 +20,7 @@ import {
   newtonsToKiloNewtons
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
+import { SetpointSliders } from '../components/SetpointSliders'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -356,6 +357,12 @@ export function Dashboard() {
               atAngleSetpoint={false}
               angleAdvices={angleAdvices}
               thrustAdvices={thrustAdvices}
+            />
+          </div>
+          <div className="instrument-panel-row">
+            <SetpointSliders
+              thrustSetpoint={thrustSetpoint}
+              angleSetpoint={angleSetpoint}
               onSetPointChange={handleSetPointChange}
             />
           </div>
