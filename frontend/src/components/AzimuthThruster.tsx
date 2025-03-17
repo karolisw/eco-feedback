@@ -13,11 +13,9 @@ type AzimuthThrusterProps = {
   touching: boolean // Whether the thruster is being touched by the operator'
   atThrustSetpoint: boolean // Whether the thruster is at the setpoint
   atAngleSetpoint: boolean // Whether the angle is at the setpoint
-  onSetPointChange: (type: 'thrust' | 'angle', value: number) => void // Callback function
   angleAdvices: AngleAdvice[]
   thrustAdvices: LinearAdvice[]
 }
-
 export function AzimuthThruster({
   thrust,
   angle,
@@ -27,8 +25,7 @@ export function AzimuthThruster({
   atThrustSetpoint,
   atAngleSetpoint,
   angleAdvices,
-  thrustAdvices,
-  onSetPointChange
+  thrustAdvices
 }: AzimuthThrusterProps) {
   return (
     <div className="azimuth-thruster">
@@ -42,25 +39,7 @@ export function AzimuthThruster({
         atAngleSetpoint={atAngleSetpoint}
         thrustAdvices={thrustAdvices}
         angleAdvices={angleAdvices}
-      ></ObcAzimuthThruster>
-      <div className="setpoint-controls">
-        <label>Thrust Setpoint</label>
-        <input
-          type="range"
-          min="-100"
-          max="100"
-          value={thrustSetPoint}
-          onChange={(e) => onSetPointChange('thrust', Number(e.target.value))}
-        />
-        <label>Angle Setpoint</label>
-        <input
-          type="range"
-          min="-180"
-          max="180"
-          value={angleSetpoint}
-          onChange={(e) => onSetPointChange('angle', Number(e.target.value))}
-        />
-      </div>
+      />
     </div>
   )
 }
