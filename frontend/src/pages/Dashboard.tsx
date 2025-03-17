@@ -4,6 +4,7 @@ import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instru
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
+import { ScenarioLogger } from '../components/ScenarioLogger'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { memo, useEffect, useRef, useState, useCallback, useMemo } from 'react'
@@ -295,9 +296,16 @@ export function Dashboard() {
       )}
       <div className="ui-panel">
         <div className="button-row">
+          <ScenarioLogger
+            simulatorData={{
+              position_pri: azimuthData.position_pri,
+              angle_pri: azimuthData.angle_pri
+            }}
+            simulationRunning={simulationRunning}
+          />
           <button
             onClick={stopSimulation}
-            className="button"
+            className="stop-button"
             disabled={!simulationRunning}
           >
             Stop Simulation
@@ -357,7 +365,7 @@ export function Dashboard() {
         <div className="instrument-panel-col">
           <div className="instrument-panel-row">
             <InstrumentField
-              setPoint={0}
+              setPoint={angleSetpoint}
               hasSetPoint={true}
               value={toHeading(simulatorData.heading)}
               degree={true}
@@ -436,7 +444,6 @@ export function Dashboard() {
           </div>
         </div>
         <hr className="solid"></hr>
-
         {/* Checkpoints */}
         <div className="info-card">
           <h3>Checkpoints</h3>
