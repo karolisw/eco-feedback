@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { saveAs } from 'file-saver'
 import * as Papa from 'papaparse'
-import '../styles/logger.css'
 import '../styles/dashboard.css'
 
 export function ScenarioLogger({
@@ -68,7 +67,7 @@ export function ScenarioLogger({
     <div className="scenario-logger">
       <button
         onClick={toggleLogging}
-        className={'scenario-button ${isLogging ? "stop" : "start" }'}
+        className={`scenario-button ${isLogging ? 'stop' : 'start'}`}
       >
         {isLogging ? 'Stop scenario' : 'Start scenario'}
       </button>
