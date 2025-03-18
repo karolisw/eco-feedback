@@ -26,7 +26,6 @@ export function UseSimulatorWebSocket(
         ) as SimulatorData
         // Prevent overwriting with bad data (0 or NaN)
         if (!isValidData(message)) {
-          console.warn('Received invalid data, skipping update:', message)
           return
         }
         setData(message)
