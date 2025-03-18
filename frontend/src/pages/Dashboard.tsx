@@ -34,12 +34,17 @@ export function Dashboard() {
   const [angleSetpoint, setAngleSetpoint] = useState<number>(0)
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
+  //const [alertTriggered, setAlertTriggered] = useState<boolean>(false) // For logging purposes
+  const [alertTime, setAlertTime] = useState<number | null>(null)
+  const [alertType, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
 
   // Keep track of last sent command
   const lastSentCommand = useRef<{ position: number; angle: number } | null>(
     null
   )
+
+  const alertTriggeredRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -131,7 +136,6 @@ export function Dashboard() {
         newCommand.position === undefined ||
         newCommand.angle === undefined
       ) {
-        console.log('Skipping invalid command, data is NaN or undefined.')
         return
       }
 
@@ -141,11 +145,10 @@ export function Dashboard() {
         lastSentCommand.current.position !== newCommand.position ||
         lastSentCommand.current.angle !== newCommand.angle
       ) {
-        console.log('Sending new navigate command:', newCommand)
         sendToSimulator(JSON.stringify(newCommand))
         lastSentCommand.current = newCommand // Update last sent command
       } else {
-        console.log('Skipping redundant command, data unchanged.')
+        return
       }
     }
   }, [azimuthData, sendToSimulator])
@@ -196,14 +199,11 @@ export function Dashboard() {
   ])
 
   useEffect(() => {
-    console.log('azimuth data is: ', azimuthData)
     if (!azimuthData) return
 
     const vibrationStrength = getVibrationStrength()
 
     if (vibrationStrength > 0 && alertConfig.enableVibration) {
-      console.log(`Sending vibration command: Strength ${vibrationStrength}`)
-
       // Send vibration command to backend
       sendToBackend({
         command: 'set_vibration',
@@ -213,9 +213,6 @@ export function Dashboard() {
       // Stop vibration after "feedbackDuration" seconds for "approaching" and "entering" cases
       if (vibrationStrength < alertConfig.vibrationRemain) {
         // TODO this depends on the meaning of "vibrationRemain"
-        console.log(
-          `Stopping vibration after ${alertConfig.feedbackDuration}ms`
-        )
         setTimeout(() => {
           sendToBackend({
             command: 'set_vibration',
@@ -233,6 +230,61 @@ export function Dashboard() {
     alertConfig.feedbackDuration
   ])
 
+  // **1. Detect when an alert is triggered (T1) and what type it is**
+  useEffect(() => {
+    if (!simulationRunning || !azimuthData) return
+
+    let alertNow = false
+    let detectedType: 'advice' | 'caution' | null = null
+
+    for (const advice of thrustAdvices) {
+      if (
+        azimuthData.position_pri >= advice.min &&
+        azimuthData.position_pri <= advice.max
+      ) {
+        alertNow = true
+        detectedType = advice.type
+      }
+    }
+
+    for (const advice of angleAdvices) {
+      if (
+        azimuthData.angle_pri >= advice.minAngle &&
+        azimuthData.angle_pri <= advice.maxAngle
+      ) {
+        alertNow = true
+        detectedType = advice.type
+      }
+    }
+
+    if (alertNow && !alertTriggeredRef.current) {
+      alertTriggeredRef.current = true
+      setAlertTime(Date.now()) // Set T1
+      setAlertType(detectedType) // Store type of alert
+    }
+  }, [azimuthData, thrustAdvices, angleAdvices, simulationRunning])
+
+  // **2. Detect operator response (T2)**
+  useEffect(() => {
+    if (!alertTriggeredRef.current || !simulationRunning || alertTime === null)
+      return
+
+    if (
+      azimuthData.position_pri !== thrustSetpoint ||
+      azimuthData.angle_pri !== angleSetpoint
+    ) {
+      alertTriggeredRef.current = false // Reset alert
+      setAlertTime(null) // Reset T1
+    }
+  }, [
+    azimuthData.position_pri,
+    azimuthData.angle_pri,
+    simulationRunning,
+    alertTime,
+    thrustSetpoint,
+    angleSetpoint
+  ])
+
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
     sendToSimulator(JSON.stringify({ command: 'stop_simulation' }))
@@ -248,8 +300,6 @@ export function Dashboard() {
     const totalConsumption = simulatorData.consumedTotal
     const runTime = 100 //TODO this can be calculated from the start and stop time of the simulation
     const configurationNumber = 1 // TODO Hardcoded for now, this will be selected from dropdown (issue 34)
-
-    console.log(`Avg Speed: ${avgSpeed}, Avg RPM: ${avgRpm}`)
 
     // Send data to backend for storage
     sendToBackend({
@@ -270,8 +320,6 @@ export function Dashboard() {
   }
 
   const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
-    console.log(`Attempting to set ${type} to`, value)
-
     // Update state immediately
     if (type === 'thrust') {
       setThrustSetpoint(value)
@@ -303,6 +351,8 @@ export function Dashboard() {
               angle_pri: azimuthData.angle_pri
             }}
             simulationRunning={simulationRunning}
+            alertTriggered={alertTriggeredRef.current}
+            alertType={alertType}
           />
           <button
             onClick={stopSimulation}

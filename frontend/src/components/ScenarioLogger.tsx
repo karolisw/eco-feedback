@@ -5,30 +5,35 @@ import '../styles/dashboard.css'
 
 export function ScenarioLogger({
   simulatorData,
-  simulationRunning
+  simulationRunning,
+  alertTriggered,
+  alertType
 }: {
   simulatorData: { position_pri: number; angle_pri: number }
   simulationRunning: boolean
+  alertTriggered: boolean
+  alertType?: 'advice' | 'caution' | null
 }) {
   const [isLogging, setIsLogging] = useState(false)
   const [logData, setLogData] = useState<
-    { timestamp: string; thrust: number; azimuthAngle: number }[]
+    {
+      timestamp: string
+      thrust: number
+      azimuthAngle: number
+      alertType: 'advice' | 'caution' | null | undefined
+    }[]
   >([])
   const [scenarioCount, setScenarioCount] = useState(1)
+  const [lastAlertTime, setLastAlertTime] = useState<number | null>(null)
 
   const startLogging = () => {
-    if (!simulationRunning) {
-      console.warn('Cannot start logging when simulation is not running.')
-      return
-    }
+    if (!simulationRunning) return
     setIsLogging(true)
     setLogData([])
-    console.log(`Started logging scenario ${scenarioCount}`)
   }
 
   const stopLogging = useCallback(() => {
     if (logData.length === 0) return
-
     const csv = Papa.unparse(logData)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     saveAs(blob, `scenario_${scenarioCount}.csv`)
@@ -36,40 +41,51 @@ export function ScenarioLogger({
     setIsLogging(false)
   }, [logData, scenarioCount])
 
+  // Capture T1 when alert is triggered
+  useEffect(() => {
+    if (isLogging && alertTriggered) {
+      console.log('🚨 Scenario Logger: Alert detected!')
+      setLastAlertTime(Date.now())
+    }
+  }, [alertTriggered, alertType, isLogging])
+
+  // Capture T2 when thrust or angle changes
   useEffect(() => {
     if (!isLogging) return
 
-    const newEntry = {
-      timestamp: new Date().toISOString(),
-      thrust: simulatorData.position_pri,
-      azimuthAngle: simulatorData.angle_pri
-    }
-    setLogData((prevData) => [...prevData, newEntry])
-  }, [simulatorData, isLogging])
+    const currentTime = Date.now()
+    let reactionTime = null
 
-  // Automatically stop logging when simulation stops
-  useEffect(() => {
-    if (!simulationRunning && isLogging) {
-      console.warn('Simulation stopped, automatically stopping logging.')
-      stopLogging()
+    if (lastAlertTime) {
+      reactionTime = currentTime - lastAlertTime
+      setLastAlertTime(null)
     }
-  }, [simulationRunning, isLogging, stopLogging])
 
-  const toggleLogging = () => {
-    if (isLogging) {
-      stopLogging()
-    } else {
-      startLogging()
-    }
-  }
+    setLogData((prevData) => [
+      ...prevData,
+      {
+        timestamp: new Date().toISOString(),
+        thrust: simulatorData.position_pri,
+        azimuthAngle: simulatorData.angle_pri,
+        reactionTime,
+        alertType
+      }
+    ])
+  }, [
+    simulatorData.position_pri,
+    simulatorData.angle_pri,
+    isLogging,
+    lastAlertTime,
+    alertType
+  ])
 
   return (
     <div className="scenario-logger">
       <button
-        onClick={toggleLogging}
-        className={`scenario-button ${isLogging ? 'stop' : 'start'}`}
+        onClick={() => (isLogging ? stopLogging() : startLogging())}
+        className="scenario-button"
       >
-        {isLogging ? 'Stop scenario' : 'Start scenario'}
+        {isLogging ? 'Stop Scenario' : 'Start Scenario'}
       </button>
     </div>
   )
