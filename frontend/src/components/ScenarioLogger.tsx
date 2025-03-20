@@ -24,7 +24,6 @@ export function ScenarioLogger({
   const [scenarioId, setScenarioId] = useState<string | null>(null)
   const [logData, setLogData] = useState<
     {
-      scenarioId: string
       timestamp: string
       thrust: number
       azimuthAngle: number
@@ -32,7 +31,6 @@ export function ScenarioLogger({
       exitTime?: number | null
       alertType?: 'advice' | 'caution' | null
       alertCategory?: 'thrust' | 'angle' // Marks if entry is thrust or angle
-      configFileName: string
     }[]
   >([])
 
@@ -90,7 +88,7 @@ export function ScenarioLogger({
         console.log('Exporting CSV...')
         const csv = Papa.unparse(logData)
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-        saveAs(blob, `scenario_${scenarioCount}.csv`)
+        saveAs(blob, `${scenarioId}-${configFileName}`)
 
         setScenarioCount((prev) => prev + 1)
         console.log('CSV file saved.')
@@ -101,7 +99,7 @@ export function ScenarioLogger({
       setIsLogging(false)
       isStoppingRef.current = false
     }, 200)
-  }, [logData, scenarioCount])
+  }, [logData, configFileName, scenarioId])
 
   // ** Capture T1 (Alert Triggered)**
   useEffect(() => {
@@ -191,8 +189,6 @@ export function ScenarioLogger({
       setLogData((prevData) => [
         ...prevData,
         {
-          scenarioId: scenarioId ?? '0',
-          configFileName: configFileName,
           timestamp: currentTime,
           thrust: simulatorData.position_pri,
           azimuthAngle: simulatorData.angle_pri,
@@ -226,8 +222,6 @@ export function ScenarioLogger({
       setLogData((prevData) => [
         ...prevData,
         {
-          scenarioId: scenarioId ?? '0',
-          configFileName: configFileName,
           timestamp: currentTime,
           thrust: simulatorData.position_pri,
           azimuthAngle: simulatorData.angle_pri,
@@ -244,14 +238,7 @@ export function ScenarioLogger({
       lastAlertTime.current.angle = null
       firstResponseTime.current.angle = null
     }
-  }, [
-    simulatorData,
-    isLogging,
-    thrustAdvices,
-    angleAdvices,
-    configFileName,
-    scenarioId
-  ])
+  }, [simulatorData, isLogging, thrustAdvices, angleAdvices])
 
   // Automatically stop logging when simulation stops
   useEffect(() => {
