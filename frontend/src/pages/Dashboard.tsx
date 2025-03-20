@@ -25,7 +25,8 @@ import { SetpointSliders } from '../components/SetpointSliders'
 type LocationState = {
   angleAdvices?: AngleAdvice[]
   thrustAdvices?: LinearAdvice[]
-  alertConfig?: AlertConfig
+  alertConfig?: AlertConfig //TODO could write this into a csv by passing it to ScenarioLogger if necessary
+  selectedConfig: string
 }
 
 export function Dashboard() {
@@ -80,6 +81,8 @@ export function Dashboard() {
   // Alert zones
   const location = useLocation()
   const state = location.state as LocationState | null // Type casting for safety
+
+  const configFileName = state?.selectedConfig ?? 'unknown'
 
   // Fetch advices from location state (set in startup page) or use default values
   const angleAdvices: AngleAdvice[] = useMemo(
@@ -350,6 +353,7 @@ export function Dashboard() {
               position_pri: azimuthData.position_pri,
               angle_pri: azimuthData.angle_pri
             }}
+            configFileName={configFileName}
             thrustAdvices={thrustAdvices}
             angleAdvices={angleAdvices}
             simulationRunning={simulationRunning}

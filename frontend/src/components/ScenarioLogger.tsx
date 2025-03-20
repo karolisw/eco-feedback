@@ -7,7 +7,8 @@ export function ScenarioLogger({
   simulatorData,
   simulationRunning,
   thrustAdvices,
-  angleAdvices
+  angleAdvices,
+  configFileName
 }: {
   simulatorData: { position_pri: number; angle_pri: number }
   simulationRunning: boolean
@@ -17,11 +18,13 @@ export function ScenarioLogger({
     maxAngle: number
     type: 'advice' | 'caution'
   }[]
+  configFileName: string
 }) {
   const [isLogging, setIsLogging] = useState(false)
-
+  const [scenarioId, setScenarioId] = useState<string | null>(null)
   const [logData, setLogData] = useState<
     {
+      scenarioId: string
       timestamp: string
       thrust: number
       azimuthAngle: number
@@ -29,6 +32,7 @@ export function ScenarioLogger({
       exitTime?: number | null
       alertType?: 'advice' | 'caution' | null
       alertCategory?: 'thrust' | 'angle' // Marks if entry is thrust or angle
+      configFileName: string
     }[]
   >([])
 
@@ -66,8 +70,13 @@ export function ScenarioLogger({
       console.warn('Cannot start logging when simulation is not running.')
       return
     }
+
+    const newScenarioId = new Date().toISOString()
+
+    setScenarioId(newScenarioId)
     setIsLogging(true)
     setLogData([])
+
     console.log(`Started logging scenario ${scenarioCount}`)
   }
 
@@ -182,6 +191,8 @@ export function ScenarioLogger({
       setLogData((prevData) => [
         ...prevData,
         {
+          scenarioId: scenarioId ?? '0',
+          configFileName: configFileName,
           timestamp: currentTime,
           thrust: simulatorData.position_pri,
           azimuthAngle: simulatorData.angle_pri,
@@ -215,6 +226,8 @@ export function ScenarioLogger({
       setLogData((prevData) => [
         ...prevData,
         {
+          scenarioId: scenarioId ?? '0',
+          configFileName: configFileName,
           timestamp: currentTime,
           thrust: simulatorData.position_pri,
           azimuthAngle: simulatorData.angle_pri,
@@ -231,7 +244,14 @@ export function ScenarioLogger({
       lastAlertTime.current.angle = null
       firstResponseTime.current.angle = null
     }
-  }, [simulatorData, isLogging, thrustAdvices, angleAdvices])
+  }, [
+    simulatorData,
+    isLogging,
+    thrustAdvices,
+    angleAdvices,
+    configFileName,
+    scenarioId
+  ])
 
   // Automatically stop logging when simulation stops
   useEffect(() => {
