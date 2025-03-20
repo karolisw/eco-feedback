@@ -7,7 +7,8 @@ export function ScenarioLogger({
   simulatorData,
   simulationRunning,
   thrustAdvices,
-  angleAdvices
+  angleAdvices,
+  configFileName
 }: {
   simulatorData: { position_pri: number; angle_pri: number }
   simulationRunning: boolean
@@ -17,9 +18,10 @@ export function ScenarioLogger({
     maxAngle: number
     type: 'advice' | 'caution'
   }[]
+  configFileName: string
 }) {
   const [isLogging, setIsLogging] = useState(false)
-
+  const [scenarioId, setScenarioId] = useState<string | null>(null)
   const [logData, setLogData] = useState<
     {
       timestamp: string
@@ -66,8 +68,13 @@ export function ScenarioLogger({
       console.warn('Cannot start logging when simulation is not running.')
       return
     }
+
+    const newScenarioId = new Date().toISOString()
+
+    setScenarioId(newScenarioId)
     setIsLogging(true)
     setLogData([])
+
     console.log(`Started logging scenario ${scenarioCount}`)
   }
 
@@ -81,7 +88,7 @@ export function ScenarioLogger({
         console.log('Exporting CSV...')
         const csv = Papa.unparse(logData)
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-        saveAs(blob, `scenario_${scenarioCount}.csv`)
+        saveAs(blob, `${scenarioId}-${configFileName}`)
 
         setScenarioCount((prev) => prev + 1)
         console.log('CSV file saved.')
@@ -92,7 +99,7 @@ export function ScenarioLogger({
       setIsLogging(false)
       isStoppingRef.current = false
     }, 200)
-  }, [logData, scenarioCount])
+  }, [logData, configFileName, scenarioId])
 
   // ** Capture T1 (Alert Triggered)**
   useEffect(() => {

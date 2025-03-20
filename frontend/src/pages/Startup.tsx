@@ -89,7 +89,7 @@ export function Startup() {
 
   const [thrustAdvices, setThrustAdvices] = useState<LinearAdvice[]>([
     { min: 20, max: 50, type: AdviceType.advice, hinted: true },
-    { min: 60, max: 100, type: AdviceType.caution, hinted: true }
+    { min: 80, max: 100, type: AdviceType.caution, hinted: true }
   ])
 
   const updateAngleAdvice = <K extends keyof AngleAdvice>(
@@ -145,7 +145,12 @@ export function Startup() {
       sendToSimulator(JSON.stringify({ command: 'start_simulation' }))
       // Pass alert zones via navigation state
       await navigate('/simulator', {
-        state: { angleAdvices, thrustAdvices, alertConfig }
+        state: {
+          angleAdvices,
+          thrustAdvices,
+          alertConfig,
+          selectedConfig
+        }
       })
     } catch (error) {
       console.error('Failed to start simulation:', error)
