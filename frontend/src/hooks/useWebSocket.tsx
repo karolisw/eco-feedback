@@ -18,7 +18,6 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
   // Update state when a new message arrives
   useEffect(() => {
     if (lastJsonMessage !== null) {
-      console.log('Received WebSocket message:', lastJsonMessage)
       setData(lastJsonMessage as DashboardData)
     }
   }, [lastJsonMessage])
@@ -27,7 +26,6 @@ export function UseWebSocket(url: string, initialData: DashboardData) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendMessage = (message: any) => {
     if (readyState === ReadyState.OPEN) {
-      console.log('📤 Sending WebSocket message:', message)
       sendJsonMessage(message)
     } else {
       console.warn('WebSocket is not open, cannot send message.')
