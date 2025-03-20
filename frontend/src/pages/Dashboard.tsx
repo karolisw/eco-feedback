@@ -36,7 +36,7 @@ export function Dashboard() {
   const [rpmData, setRpmData] = useState<number[]>([])
   //const [alertTriggered, setAlertTriggered] = useState<boolean>(false) // For logging purposes
   const [alertTime, setAlertTime] = useState<number | null>(null)
-  const [alertType, setAlertType] = useState<'advice' | 'caution' | null>(null)
+  const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
 
   // Keep track of last sent command
@@ -350,9 +350,9 @@ export function Dashboard() {
               position_pri: azimuthData.position_pri,
               angle_pri: azimuthData.angle_pri
             }}
+            thrustAdvices={thrustAdvices}
+            angleAdvices={angleAdvices}
             simulationRunning={simulationRunning}
-            alertTriggered={alertTriggeredRef.current}
-            alertType={alertType}
           />
           <button
             onClick={stopSimulation}
