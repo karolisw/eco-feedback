@@ -23,8 +23,8 @@ class Dashboard:
         self.database = None  
         
         # Mock data generators
-        self.mock_thrust = itertools.cycle([40,50,60,70,80,90,100,90,80,70,60,50])  # Simulates increasing & decreasing thrust
-        self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100, 110, 120,130,140,150,160,180,170,160,150,130,120,110,100,90,80,70,60,50,40,30, 15, 0, -15, -30, -45, -60, -75, -90, -105,-120,-145,-160, -175, -160,-145,-120,-105,-90,-75,-60,-45, -30, -15, 0])  # Oscillates rudder angle
+        #self.mock_thrust = itertools.cycle([40,50,60,70,80,90,100,90,80,70,60,50])  # Simulates increasing & decreasing thrust
+        #self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100, 110, 120,130,140,150,160,180,170,160,150,130,120,110,100,90,80,70,60,50,40,30, 15, 0, -15, -30, -45, -60, -75, -90, -105,-120,-145,-160, -175, -160,-145,-120,-105,-90,-75,-60,-45, -30, -15, 0])  # Oscillates rudder angle
         
     def set_database(self, database: Database):
         """Assigns a database instance to the dashboard singleton."""
@@ -37,6 +37,8 @@ class Dashboard:
                 raw_data = await self.controller.get_latest_data() # TODO method is slow (ca 2.5s) - fix
                 
                 # If no real data, send dynamic mock data
+                
+                """
                 if not raw_data:
                     raw_data = {
                         "IREG_0_100": next(self.mock_thrust),  # Simulates a gradual thrust change
@@ -46,12 +48,14 @@ class Dashboard:
                         "IREG_4_100": 50,  # Simulated setpoint for primary thruster
                         "IREG_4_200": 10   # Simulated setpoint for secondary thruster
                     }
+                """
                 
                 formatted_data = self.format_data(raw_data)
                 
                 if formatted_data and formatted_data != self.latest_data and self.clients:
                     logger.info("New Azimuth data, broadcasting...")
                     self.latest_data = formatted_data
+                    
                 
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
@@ -82,7 +86,7 @@ class Dashboard:
                 vibration = data.get("strength", 0)
                 logger.info(f"Setting vibration to {vibration}")
 
-                success = self.controller.set_vibration(vibration)
+                success = await self.controller.set_vibration(vibration)
                 if success:
                     logger.info("Vibration successfully updated.")
                 else:
@@ -110,15 +114,18 @@ class Dashboard:
 
         except Exception as e:
             logger.error(f"Error processing WebSocket message: {e}")
-
+            
     async def send_live_updates(self, websocket: WebSocket):
         """Continuously send azimuth data to the frontend."""
         try:
             while True:
                 if self.latest_data:
-                    logger.info(f"Sending live azimuth data: {self.latest_data}")
-                    await websocket.send_json(self.latest_data)
-                
+                    # Check for "empty" data: all values are exactly 0.0
+                    if all(value == 0.0 for value in self.latest_data.values()):
+                        logger.warning("Skipping update: Detected empty/default azimuth data.")
+                    else:
+                        logger.info(f"Sending live azimuth data: {self.latest_data}")
+                        await websocket.send_json(self.latest_data)
                 await asyncio.sleep(1)  # Prevent flooding
         except Exception as e:
             logger.error(f"Error sending live updates: {e}")
