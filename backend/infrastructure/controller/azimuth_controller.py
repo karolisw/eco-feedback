@@ -1,14 +1,17 @@
 import asyncio
+import logging
 import os
-import time
 import yaml
 import numpy as np
 
 from pymodbus import FramerType
-from pymodbus.client import ModbusSerialClient, ModbusTcpClient, AsyncModbusSerialClient, AsyncModbusTcpClient
+from pymodbus.client import AsyncModbusSerialClient, AsyncModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ModbusIOException
 from pymodbus.client.mixin import ModbusClientMixin
+
+logger = logging.getLogger("azimuth")
+logging.basicConfig(level=logging.INFO)
 
 class AzimuthController:
     def __init__(self, connection_type="RTU", config_file=None):
@@ -29,7 +32,11 @@ class AzimuthController:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
         # Set default config file path if not provided
+        if config_file is not None: 
+            logger.info(f"Config file provided: {config_file}")
+        
         if config_file is None:
+            logger.info("No config file provided. Using default config.yaml...")
             config_file = os.path.join(base_dir, "config.yaml") 
             
         # Load configuration
@@ -50,15 +57,15 @@ class AzimuthController:
         else:
             self.ip = self.config["tcp"]["ip"]
             self.tcp_port = self.config["tcp"]["tcp_port"]
-
-        #self.connect()
+        logger.info("Attempting to connect to Modbus server...")
+        
 
     async def connect(self):
         """Attempts to establish a Modbus connection."""
-        print(f"[INFO] Connecting via {self.connection_type}...")
+        logger.info(f"Connecting via {self.connection_type}...")
 
         if self.client:
-            print("[INFO] Closing previous connection...")
+            logger.info("Closing previous connection...")
             await self.client.close()
 
         if self.connection_type == "RTU":
@@ -76,12 +83,11 @@ class AzimuthController:
         # Retry loop for connection attempts
         for attempt in range(self.max_attempts):
             if await self.client.connect():
-                print(f"[INFO] Connection established on attempt {attempt + 1}")
+                logger.info(f"Connection established on attempt {attempt + 1}")
                 return True
-            print(f"[WARNING] Connection attempt {attempt + 1} failed. Retrying in {self.retry_delay} seconds...")
+            logger.warning(f"Connection attempt {attempt + 1} failed. Retrying in {self.retry_delay} seconds...")
             await asyncio.sleep(self.retry_delay)
-
-        print("[ERROR] Failed to connect after multiple attempts.")
+        logger.error("Failed to connect after multiple attempts.")
         return False
 
     async def disconnect(self): 
@@ -89,41 +95,48 @@ class AzimuthController:
         if self.client:
             await self.client.close()
             self.client = None
-            print("[INFO] Disconnected from azimuth controller.")
+            logger.info("Disconnected from Modbus server.")
 
     def read_csv(self): 
         """Reads the CSV file and extracts register configurations."""
         try:
+            logger.info(f"Reading CSV file: {self.csv_file}")
             data = np.genfromtxt(self.csv_file, delimiter=",", dtype="str", skip_header=1)
             return data
         except Exception as e:
-            print(f"[ERROR] Failed to read CSV file: {e}")
+            logger.error(f"Failed to read CSV file: {e}")
             return None
 
     def assign_registers(self):
         """Creates a dictionary of registers based on the CSV file."""
-        data = self.read_csv()
-        if data is None:
-            return
+        try:
+            logger.info("Assigning registers...")
+            data = self.read_csv()
+            if data is None:
+                return
 
-        regs = {}
-        for row in data:
-            reg_type = row[2]  # COIL, ISTS, HREG, IREG
-            address = int(row[3].strip("x")) if row[3] else None
-            data_type = row[6]  # FLOAT, INT, etc.
+            regs = {}
+            for row in data:
+                reg_type = row[2]  # COIL, ISTS, HREG, IREG
+                address = int(row[3].strip("x")) if row[3] else None
+                data_type = row[6]  # FLOAT, INT, etc.
 
-            key = f"{reg_type}_{address}"
-            regs[key] = {
-                "reg_type": reg_type,
-                "address": address,
-                "data_type": data_type,
-            }
+                key = f"{reg_type}_{address}"
+                regs[key] = {
+                    "reg_type": reg_type,
+                    "address": address,
+                    "data_type": data_type,
+                }
 
-        self.registers = regs
-        print(f"[INFO] Assigned {len(regs)} registers.")
+            self.registers = regs
+            #logger.info(f"registers: {regs}")
+            logger.info(f"Assigned {len(regs)} registers.")
+        except Exception as e:
+            logger.error(f"Failed to assign registers: {e}")
 
     
     async def fetch_register_data(self):
+        logger.info("Fetching register data...")
         if not self.client or not self.client.connected:
             print("[WARNING] Not connected to Modbus server.")
             return {}
@@ -179,9 +192,7 @@ class AzimuthController:
                     print(f"[ERROR] Modbus IO Exception while reading {reg_type} {address}: {e}")
                 except Exception as e:
                     print(f"[ERROR] Unexpected error while reading {reg_type} {address}: {e}")
-                
                 self.latest_data = data_values  # Store the latest data
-                    
         return data_values
     
     def set_setpoint(self, thrust_value: int, angle_value: int):
@@ -217,7 +228,7 @@ class AzimuthController:
             print(f"[ERROR] Unexpected error while writing setpoints: {e}")
             return False
     
-    def set_vibration(self, vibration_value: int):
+    async def set_vibration(self, vibration: int):
         """
         Writes the vibration value to the Modbus register.
 
@@ -226,17 +237,31 @@ class AzimuthController:
         if not self.client or not self.client.connected:
             print("[ERROR] Not connected to Modbus. Cannot set vibration.")
             return False
+        
+        vibration_strength_reg = 0x01 # TODO correct address could easily be "1" instead of "0x01"
+        enable_vibration_reg = 0x02
 
         try:
-            # HREG 01 is used to set the vibration value
-            vibration_register = 0x01 # TODO correct address could easily be "1" instead of "0x01"
+            # COIL 02 is used to enable the vibration
+            if vibration > 0:
+                
+                # Enable vibration
+                await self.client.write_coil(address=enable_vibration_reg, value=1, slave=self.slave_id)
+                
+                # Set vibration strength
+                await self.client.write_register(address=vibration_strength_reg, value=bool(vibration), slave=self.slave_id)
+                print(f"[INFO] Set vibration value to {vibration} at register {vibration_strength_reg}")
 
-            # Write vibration value
-            self.client.write_register(address=vibration_register, value=bool(vibration_value), slave=self.slave_id)
-            print(f"[INFO] Set vibration value to {vibration_value} at register {vibration_register}")
+                return True
 
-            return True
+            else:
+                # Disable vibration
+                await self.client.write_coil(address=enable_vibration_reg, value=0, slave=self.slave_id)
+                await self.client.write_register(address=vibration_strength_reg, value=bool(vibration), slave=self.slave_id)
 
+                print(f"[INFO] Disabled vibration at register {enable_vibration_reg}")
+            
+                return True
         except ModbusIOException as e:
             print(f"[ERROR] Modbus IO Exception while writing vibration: {e}")
             return False
@@ -248,13 +273,14 @@ class AzimuthController:
     async def get_latest_data(self):
         """Provide the latest register data for external use."""
         #return self.latest_data.copy()
+        #logger.info(f"Latest data: {self.latest_data}")
         return self.latest_data.copy()
         #with self.lock:
          #   return self.latest_data.copy() 
 
     async def update_data(self, interval=0.1):
         """Continuously fetches data every 'interval' seconds."""
-        print("[INFO] Starting data update loop...")
+        logger.info("Starting data update loop...")
         while True:
             await self.fetch_register_data()
             await asyncio.sleep(interval)
@@ -267,5 +293,5 @@ class AzimuthController:
         asyncio.create_task(self.update_data())  # Run update in background
 
         
-controller = AzimuthController(connection_type="RTU")
+controller = AzimuthController()
 #asyncio.create_task(controller.connect())  # Ensures async connection setup
