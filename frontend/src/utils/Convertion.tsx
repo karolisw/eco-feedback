@@ -25,3 +25,11 @@ export function calculateAverage(arr: number[]) {
 export function newtonsToKiloNewtons(newtons: number) {
   return newtons / 1000
 }
+
+// Negative angle to real angle
+// If the angle is returned (from modbus) as a negative number 'x', the real angle 'y' can be found like this:
+// y = x + 360
+// Example: -90 degrees is the same as 270 degrees, because -90 + 360 = 270
+export function negativeAngleToRealAngle(angle: number) {
+  return angle < 0 ? 360 + angle : angle
+}
