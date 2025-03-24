@@ -35,11 +35,11 @@ running_tasks = []
 
 # TODO: At some point, figure out if this is actually needed (startup event -> could i just include it in the main function?)
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     """Start background data processing on FastAPI startup."""
     task = asyncio.create_task(dashboard.fetch_data())
     running_tasks.append(task)
-
+    
     
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -62,7 +62,7 @@ async def run_server():
     config = uvicorn.Config(app, host="127.0.0.1", port=8000)
     server = uvicorn.Server(config)
     await server.serve()
-
+    
 async def main():
     """Runs the controller and WebSocket server concurrently."""
     await asyncio.gather(run_server())

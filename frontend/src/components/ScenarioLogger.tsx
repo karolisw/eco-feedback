@@ -133,6 +133,7 @@ export function ScenarioLogger({
 
     // Log new thrust alert
     if (thrustAlertNow && !alertActive.current.thrust) {
+      console.log('Entering thrust alert zone')
       alertActive.current.thrust = true
       lastAlertTime.current.thrust = Date.now()
       alertTypeRef.current.thrust = detectedThrustType
@@ -140,6 +141,7 @@ export function ScenarioLogger({
     }
     // Log new angle alert
     if (angleAlertNow && !alertActive.current.angle) {
+      console.log('Entering angle alert zone')
       alertActive.current.angle = true
       lastAlertTime.current.angle = Date.now()
       alertTypeRef.current.angle = detectedAngleType
@@ -158,11 +160,13 @@ export function ScenarioLogger({
       alertActive.current.thrust &&
       firstResponseTime.current.thrust === null
     ) {
+      console.log('Operator responded to thrust alert')
       firstResponseTime.current.thrust = currentTime
     }
 
     // Angle response
     if (alertActive.current.angle && firstResponseTime.current.angle === null) {
+      console.log('Operator responded to angle alert')
       firstResponseTime.current.angle = currentTime
     }
   }, [simulatorData, isLogging])
@@ -182,6 +186,7 @@ export function ScenarioLogger({
           simulatorData.position_pri <= advice.max
       )
     ) {
+      console.log('Exiting thrust alert zone')
       alertActive.current.thrust = false
       const exitTime = Date.now() - (lastAlertTime.current.thrust ?? 0)
 
@@ -215,6 +220,7 @@ export function ScenarioLogger({
           simulatorData.angle_pri <= advice.maxAngle
       )
     ) {
+      console.log('Exiting angle alert zone')
       alertActive.current.angle = false
       const exitTime = Date.now() - (lastAlertTime.current.angle ?? 0)
 

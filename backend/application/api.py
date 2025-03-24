@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pathlib import Path
 import logging
 from fastapi.responses import JSONResponse
-from infrastructure.controller.azimuth_controller import controller
+from infrastructure.controller.azimuth_controller import controller 
 import yaml
 from pydantic import BaseModel
 
@@ -24,15 +24,12 @@ class ConfigRequest(BaseModel):
 async def start_services():
     """Runs the AzimuthController, but aborts if the connection fails."""
     logger.info("Attempting to start AzimuthController...")
-
     try:
-        await controller.assign_registers()
+        controller.assign_registers()
         connected = await controller.connect()  # Ensure connection is established
-        
         if not connected:
             logger.warning("Failed to connect to Modbus server. Aborting start_services.")
             return  # Exit function without starting update loop
-        
         asyncio.create_task(controller.update_data())  # Run update in background
 
     except Exception as e:
@@ -68,7 +65,7 @@ async def load_config(config: ConfigRequest):
         # Update the Azimuth Controller's config dynamically
         with open(config_path, "r") as file:
             controller.config = yaml.safe_load(file)
-        
+                
         # Start the controller
         await start_services()
 

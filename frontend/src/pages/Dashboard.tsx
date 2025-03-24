@@ -17,7 +17,8 @@ import {
   toHeading,
   gramsToKiloGrams,
   calculateAverage,
-  newtonsToKiloNewtons
+  newtonsToKiloNewtons,
+  negativeAngleToRealAngle
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
 import { SetpointSliders } from '../components/SetpointSliders'
@@ -39,6 +40,8 @@ export function Dashboard() {
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
+
+  const lastSentVibration = useRef<number>(0)
 
   // Keep track of last sent command
   const lastSentCommand = useRef<{ position: number; angle: number } | null>(
@@ -173,10 +176,9 @@ export function Dashboard() {
     // Check thrust alert zones
     for (const advice of thrustAdvices) {
       if (thrust >= advice.min && thrust <= advice.max) {
+        // if caution, then vibration enter, if advice then 0 in vibration strength
         strength =
-          advice.type === AdviceType.caution
-            ? alertConfig.vibrationEnter
-            : alertConfig.vibrationApproach
+          advice.type === AdviceType.caution ? alertConfig.vibrationEnter : 0
       }
     }
 
@@ -185,13 +187,10 @@ export function Dashboard() {
       if (angle >= advice.minAngle && angle <= advice.maxAngle) {
         strength = Math.max(
           strength,
-          advice.type === AdviceType.caution
-            ? alertConfig.vibrationRemain
-            : alertConfig.vibrationEnter
+          advice.type === AdviceType.caution ? alertConfig.vibrationEnter : 0
         )
       }
     }
-
     return strength
   }, [
     angleAdvices,
@@ -206,23 +205,17 @@ export function Dashboard() {
 
     const vibrationStrength = getVibrationStrength()
 
-    if (vibrationStrength > 0 && alertConfig.enableVibration) {
+    if (
+      vibrationStrength !== lastSentVibration.current &&
+      alertConfig.enableVibration
+    ) {
       // Send vibration command to backend
       sendToBackend({
         command: 'set_vibration',
         strength: vibrationStrength
       })
 
-      // Stop vibration after "feedbackDuration" seconds for "approaching" and "entering" cases
-      if (vibrationStrength < alertConfig.vibrationRemain) {
-        // TODO this depends on the meaning of "vibrationRemain"
-        setTimeout(() => {
-          sendToBackend({
-            command: 'set_vibration',
-            strength: 0
-          })
-        }, alertConfig.feedbackDuration)
-      }
+      lastSentVibration.current = vibrationStrength
     }
   }, [
     azimuthData,
@@ -374,14 +367,18 @@ export function Dashboard() {
               tag="Power"
               unit="%"
               source="Azimuth"
+              fractionDigits={1}
+              maxDigits={4}
               hasSource={true}
             ></InstrumentField>
             <InstrumentField
-              value={azimuthData.angle_pri}
+              value={negativeAngleToRealAngle(azimuthData.position_sec)}
               degree={true}
               tag="Angle"
               unit="°"
               source="Azimuth"
+              fractionDigits={1}
+              maxDigits={4}
               hasSource={true}
             ></InstrumentField>
             <InstrumentField
@@ -403,7 +400,7 @@ export function Dashboard() {
           <div className="instrument-panel-row">
             <MemoizedAzimuthThruster
               thrust={azimuthData.position_pri}
-              angle={azimuthData.angle_pri}
+              angle={negativeAngleToRealAngle(azimuthData.position_sec)}
               thrustSetPoint={thrustSetpoint}
               angleSetpoint={angleSetpoint}
               touching={true}
