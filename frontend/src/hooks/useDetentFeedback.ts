@@ -36,8 +36,7 @@ export function useDetentFeedback({
         sendToBackend({
           command: 'set_detent',
           type: 'angle',
-          pos1: center,
-          pos2: center,
+          pos: center,
           detent: 1
         })
       }
@@ -50,8 +49,7 @@ export function useDetentFeedback({
         sendToBackend({
           command: 'set_detent',
           type: 'thrust',
-          pos1: center,
-          pos2: center,
+          pos: center,
           detent: 1
         })
       }
