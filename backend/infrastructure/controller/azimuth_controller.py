@@ -129,14 +129,14 @@ class AzimuthController:
                 }
 
             self.registers = regs
-            #logger.info(f"registers: {regs}")
+            
             logger.info(f"Assigned {len(regs)} registers.")
         except Exception as e:
             logger.error(f"Failed to assign registers: {e}")
 
     
     async def fetch_register_data(self):
-        logger.info("Fetching register data...")
+        #logger.info("Fetching register data...")
         if not self.client or not self.client.connected:
             print("[WARNING] Not connected to Modbus server.")
             return {}
@@ -246,18 +246,17 @@ class AzimuthController:
             if vibration > 0:
                 
                 # Enable vibration
-                await self.client.write_coil(address=enable_vibration_reg, value=1, slave=self.slave_id)
+                await self.client.write_coil(address=enable_vibration_reg, value=True, slave=self.slave_id)
                 
                 # Set vibration strength
-                await self.client.write_register(address=vibration_strength_reg, value=bool(vibration), slave=self.slave_id)
+                await self.client.write_register(address=vibration_strength_reg, value=vibration, slave=self.slave_id)
                 print(f"[INFO] Set vibration value to {vibration} at register {vibration_strength_reg}")
 
                 return True
 
             else:
                 # Disable vibration
-                await self.client.write_coil(address=enable_vibration_reg, value=0, slave=self.slave_id)
-                await self.client.write_register(address=vibration_strength_reg, value=bool(vibration), slave=self.slave_id)
+                await self.client.write_coil(address=enable_vibration_reg, value=False, slave=self.slave_id)
 
                 print(f"[INFO] Disabled vibration at register {enable_vibration_reg}")
             
@@ -269,6 +268,82 @@ class AzimuthController:
             print(f"[ERROR] Unexpected error while writing vibration: {e}")
             return False
         
+        
+    async def set_detent(self, detent: int, type: int, pos1: int, pos2: int,):
+        """
+        Writes the detent value to the Modbus register.
+
+        :param detent_value: The detent value to set (0 - 3).
+        :param type: The type of detent to set ("angle", "thrust").
+        :param position: The position of the detent to set (0-100 or 0-359).
+        """
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set detent.")
+            return False
+        
+        thrust_hreg_pos1 = 140
+        thrust_hreg_pos2 = 141
+        
+        angle_hreg_pos1 = 240
+        angle_hreg_pos2 = 241
+        
+        strength_thrust_hreg = 100
+        strength_angle_hreg = 200
+        
+        try:
+            if (type == "thrust"):
+                logger.info("Trying to set detents for thruster")
+                # The positioning of the detents
+                await self.client.write_register(address=thrust_hreg_pos1, value=pos1, slave=self.slave_id)
+                logger.info("Detent has been set (i think) for thruster pos1")
+                await self.client.write_register(address=thrust_hreg_pos2, value=pos2, slave=self.slave_id)
+                logger.info("Detent has been set (i think) for thruster pos2")
+
+                # The strength of the detents
+                await self.client.write_register(address=strength_thrust_hreg, value=detent, slave=self.slave_id)
+                
+                logger.info(f" Set detent value to {detent} at register {strength_thrust_hreg}")
+                return True
+            if (type == "angle"):
+                # The positioning of the detents
+                await self.client.write_register(address=angle_hreg_pos1, value=pos1, slave=self.slave_id)
+                logger.info("Detent has been set (i think) for angle pos1")
+                await self.client.write_register(address=angle_hreg_pos2, value=pos2, slave=self.slave_id)
+                logger.info("Detent has been set (i think) for angle pos2")
+
+                # The strength of the detents
+                await self.client.write_register(address=strength_angle_hreg, value=detent, slave=self.slave_id)
+                logger.info(f" Set detent value to {detent} at register {strength_angle_hreg}")
+                return True
+        except ModbusIOException as e:
+            logger.error(f"[ERROR] Modbus IO Exception while writing detent: {e}")
+            return False    
+        
+    async def set_friction_strength(self, friction: int):
+        """
+        Writes the friction value to the Modbus register.
+
+        :param friction_value: The friction value to set (0 - 3).
+        """
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set friction.")
+            return False
+        
+        friction_strength_reg = 7
+
+        try:
+            # Write friction strength
+            await self.client.write_register(address=friction_strength_reg, value=friction, slave=self.slave_id)
+            logger.info(f"Set friction value to {friction} at register {friction_strength_reg}")
+
+            return True
+
+        except ModbusIOException as e:
+            print(f"[ERROR] Modbus IO Exception while writing friction: {e}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Unexpected error while writing friction: {e}")
+            return False
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""

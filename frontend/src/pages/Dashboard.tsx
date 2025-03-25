@@ -49,6 +49,8 @@ export function Dashboard() {
   )
 
   const alertTriggeredRef = useRef<boolean>(false)
+  const inThrustAdviceZoneRef = useRef<boolean>(false)
+  const inAngleAdviceZoneRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -127,6 +129,8 @@ export function Dashboard() {
     [state?.alertConfig]
   )
 
+  const detentsSentRef = useRef(false)
+
   useEffect(() => {
     if (azimuthData) {
       // Prepare new command
@@ -171,40 +175,159 @@ export function Dashboard() {
   const getVibrationStrength = useCallback(() => {
     let strength = 0
     const thrust = azimuthData.position_pri
-    const angle = azimuthData.angle_pri
+    const angle = azimuthData.position_sec
+    let type: AdviceType | null = null
 
     // Check thrust alert zones
     for (const advice of thrustAdvices) {
       if (thrust >= advice.min && thrust <= advice.max) {
         // if caution, then vibration enter, if advice then 0 in vibration strength
-        strength =
-          advice.type === AdviceType.caution ? alertConfig.vibrationEnter : 0
+        type = advice.type
+        strength = type === AdviceType.caution ? alertConfig.vibrationEnter : 0
       }
     }
 
     // Check angle alert zones
     for (const advice of angleAdvices) {
       if (angle >= advice.minAngle && angle <= advice.maxAngle) {
+        type = advice.type
         strength = Math.max(
           strength,
-          advice.type === AdviceType.caution ? alertConfig.vibrationEnter : 0
+          type === AdviceType.caution ? alertConfig.vibrationEnter : 0
         )
       }
     }
-    return strength
+    return [strength, type]
   }, [
     angleAdvices,
-    azimuthData.angle_pri,
+    azimuthData.position_sec,
     azimuthData.position_pri,
     thrustAdvices,
     alertConfig
   ])
 
+  // Send detent command to backend
+  useEffect(() => {
+    if (
+      alertConfig.enableDetents &&
+      !detentsSentRef.current &&
+      azimuthData !== undefined &&
+      azimuthData.position_pri !== 0
+    ) {
+      console.log('Trying to send detents')
+      // Loop through angle advice zones
+      for (const advice of angleAdvices) {
+        if (advice.type === AdviceType.advice) {
+          console.log('min,max angle: ', advice.minAngle, advice.maxAngle)
+          sendToBackend({
+            command: 'set_detent',
+            type: 'angle',
+            pos1: advice.minAngle,
+            pos2: advice.maxAngle,
+            detent: 1
+          })
+        }
+      }
+
+      // Loop through thrust advice zones
+      for (const advice of thrustAdvices) {
+        if (advice.type === AdviceType.advice) {
+          console.log('min,max thrust: ', advice.min, advice.max)
+          sendToBackend({
+            command: 'set_detent',
+            type: 'thrust',
+            pos1: advice.min,
+            pos2: advice.max,
+            detent: 1
+          })
+        }
+      }
+      detentsSentRef.current = true
+    }
+  }, [
+    angleAdvices,
+    azimuthData,
+    thrustAdvices,
+    sendToBackend,
+    alertConfig.enableDetents
+  ])
+
+  // Send change in friction strength to backend when entering or exiting advice zone for both thrust and angle
   useEffect(() => {
     if (!azimuthData) return
 
-    const vibrationStrength = getVibrationStrength()
+    let inThrustAdvice = false
+    let inAngleAdvice = false
 
+    // Check thrust advice
+    for (const advice of thrustAdvices) {
+      if (
+        advice.type === AdviceType.advice &&
+        azimuthData.position_pri >= advice.min &&
+        azimuthData.position_pri <= advice.max
+      ) {
+        inThrustAdvice = true
+      }
+    }
+
+    // Check angle advice
+    for (const advice of angleAdvices) {
+      if (
+        advice.type === AdviceType.advice &&
+        azimuthData.position_sec >= advice.minAngle &&
+        azimuthData.position_sec <= advice.maxAngle
+      ) {
+        inAngleAdvice = true
+        break
+      }
+    }
+
+    // THRUST ENTRY
+    if (inThrustAdvice && !inThrustAdviceZoneRef.current) {
+      console.log('Entered THRUST advice zone')
+      sendToBackend({
+        command: 'set_friction_strength',
+        friction: 1
+      })
+      inThrustAdviceZoneRef.current = true
+    }
+
+    // THRUST EXIT
+    if (!inThrustAdvice && inThrustAdviceZoneRef.current) {
+      console.log('Exited THRUST advice zone')
+      sendToBackend({
+        command: 'set_friction_strength',
+        friction: 3
+      })
+      inThrustAdviceZoneRef.current = false
+    }
+
+    // ANGLE ENTRY
+    if (inAngleAdvice && !inAngleAdviceZoneRef.current) {
+      console.log('Entered ANGLE advice zone')
+      sendToBackend({
+        command: 'set_friction_strength',
+        friction: 1
+      })
+      inAngleAdviceZoneRef.current = true
+    }
+
+    // ANGLE EXIT
+    if (!inAngleAdvice && inAngleAdviceZoneRef.current) {
+      console.log('Exited ANGLE advice zone')
+      sendToBackend({
+        command: 'set_friction_strength',
+        friction: 3
+      })
+      inAngleAdviceZoneRef.current = false
+    }
+  }, [azimuthData, angleAdvices, thrustAdvices, sendToBackend])
+
+  //  Send vibration command to backend when entering or exiting advice zone
+  useEffect(() => {
+    if (!azimuthData) return
+
+    const vibrationStrength = getVibrationStrength()[0]
     if (
       vibrationStrength !== lastSentVibration.current &&
       alertConfig.enableVibration
@@ -215,15 +338,16 @@ export function Dashboard() {
         strength: vibrationStrength
       })
 
-      lastSentVibration.current = vibrationStrength
+      // TODO add logic for the type that now exists in vibrationStrength[1] (if type==advice, then ...)
+      if (vibrationStrength != null && typeof vibrationStrength === 'number') {
+        lastSentVibration.current = vibrationStrength
+      }
     }
   }, [
     azimuthData,
     sendToBackend,
     getVibrationStrength,
-    alertConfig.enableVibration,
-    alertConfig.vibrationRemain,
-    alertConfig.feedbackDuration
+    alertConfig.enableVibration
   ])
 
   // **1. Detect when an alert is triggered (T1) and what type it is**
