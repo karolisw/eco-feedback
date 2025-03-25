@@ -27,7 +27,9 @@ export function Startup() {
     enableVibration: true,
     enableDetents: true,
     adviceHighResistance: true,
-    regularHighResistance: false
+    regularHighResistance: false,
+    vibrationStrengthThruster: 1,
+    vibrationStrengthAngle: 1
   })
 
   const initialSimData: SimulatorData = {
@@ -294,6 +296,58 @@ export function Startup() {
               }
             />
           </div>
+          {alertConfig.enableVibration && (
+            <>
+              <div className="label-container">
+                <div className="label-wrapper">
+                  <span
+                    className="info-icon"
+                    data-tooltip="Set vibration strength for thruster caution zones"
+                  >
+                    ℹ
+                  </span>
+                  <label>Thruster Caution Vibration Strength</label>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={alertConfig.vibrationStrengthThruster ?? 1}
+                  onChange={(e) =>
+                    setAlertConfig((prev) => ({
+                      ...prev,
+                      vibrationStrengthThruster: Number(e.target.value)
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="label-container">
+                <div className="label-wrapper">
+                  <span
+                    className="info-icon"
+                    data-tooltip="Set vibration strength for angle caution zones"
+                  >
+                    ℹ
+                  </span>
+                  <label>Angle Caution Vibration Strength</label>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={alertConfig.vibrationStrengthAngle ?? 1}
+                  onChange={(e) =>
+                    setAlertConfig((prev) => ({
+                      ...prev,
+                      vibrationStrengthAngle: Number(e.target.value)
+                    }))
+                  }
+                />
+              </div>
+            </>
+          )}
+
           <div className="label-container">
             <div className="label-wrapper">
               <span className="info-icon" data-tooltip="Enable detent feedback">

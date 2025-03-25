@@ -4,4 +4,6 @@ export type AlertConfig = {
     enableDetents: boolean
     adviceHighResistance: boolean,
     regularHighResistance: boolean,
+    vibrationStrengthThruster: number;
+    vibrationStrengthAngle: number;
   }
