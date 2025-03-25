@@ -22,6 +22,7 @@ import {
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
 import { SetpointSliders } from '../components/SetpointSliders'
+import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -49,8 +50,6 @@ export function Dashboard() {
   )
 
   const alertTriggeredRef = useRef<boolean>(false)
-  const inThrustAdviceZoneRef = useRef<boolean>(false)
-  const inAngleAdviceZoneRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -114,17 +113,11 @@ export function Dashboard() {
     () =>
       state?.alertConfig ||
       ({
-        vibrationApproach: 1,
         vibrationEnter: 2,
-        vibrationRemain: 3,
-        resistanceApproach: 0,
-        resistanceEnter: 1,
-        resistanceRemain: 2,
-        detents: false,
-        feedbackDuration: 4000,
         enableVibration: true,
-        enableResistance: false,
-        enableDetents: false
+        enableDetents: false,
+        adviceHighResistance: true,
+        regularHighResistance: true
       } as AlertConfig),
     [state?.alertConfig]
   )
@@ -252,7 +245,7 @@ export function Dashboard() {
     alertConfig.enableDetents
   ])
 
-  // Send change in friction strength to backend when entering or exiting advice zone for both thrust and angle
+  /*
   useEffect(() => {
     if (!azimuthData) return
 
@@ -282,12 +275,15 @@ export function Dashboard() {
       }
     }
 
+    const frictionInside = alertConfig.adviceHighResistance ? 3 : 1
+    const frictionOutside = alertConfig.regularHighResistance ? 3 : 1
+
     // THRUST ENTRY
     if (inThrustAdvice && !inThrustAdviceZoneRef.current) {
       console.log('Entered THRUST advice zone')
       sendToBackend({
         command: 'set_friction_strength',
-        friction: 1
+        friction: frictionInside
       })
       inThrustAdviceZoneRef.current = true
     }
@@ -297,7 +293,7 @@ export function Dashboard() {
       console.log('Exited THRUST advice zone')
       sendToBackend({
         command: 'set_friction_strength',
-        friction: 3
+        friction: frictionOutside
       })
       inThrustAdviceZoneRef.current = false
     }
@@ -307,7 +303,7 @@ export function Dashboard() {
       console.log('Entered ANGLE advice zone')
       sendToBackend({
         command: 'set_friction_strength',
-        friction: 1
+        friction: frictionInside
       })
       inAngleAdviceZoneRef.current = true
     }
@@ -317,11 +313,28 @@ export function Dashboard() {
       console.log('Exited ANGLE advice zone')
       sendToBackend({
         command: 'set_friction_strength',
-        friction: 3
+        friction: frictionOutside
       })
       inAngleAdviceZoneRef.current = false
     }
-  }, [azimuthData, angleAdvices, thrustAdvices, sendToBackend])
+  }, [
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    sendToBackend,
+    alertConfig.adviceHighResistance,
+    alertConfig.regularHighResistance
+  ])
+    */
+
+  // Use custom hook to handle friction feedback
+  useFrictionFeedback({
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    sendToBackend,
+    alertConfig
+  })
 
   //  Send vibration command to backend when entering or exiting advice zone
   useEffect(() => {
