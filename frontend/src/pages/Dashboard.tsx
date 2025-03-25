@@ -1,6 +1,5 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
-//import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
@@ -43,8 +42,6 @@ export function Dashboard() {
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
-
-  //const lastSentVibration = useRef<number>(0)
 
   // Keep track of last sent command
   const lastSentCommand = useRef<{ position: number; angle: number } | null>(
@@ -123,8 +120,6 @@ export function Dashboard() {
       } as AlertConfig),
     [state?.alertConfig]
   )
-
-  //const detentsSentRef = useRef(false)
 
   useEffect(() => {
     if (azimuthData) {
