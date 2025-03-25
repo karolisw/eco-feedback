@@ -1,6 +1,6 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
-import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+//import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
@@ -24,6 +24,7 @@ import { useSimulation } from '../hooks/useSimulation'
 import { SetpointSliders } from '../components/SetpointSliders'
 import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
+import { useDetentFeedback } from '../hooks/useDetentFeedback'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -123,7 +124,7 @@ export function Dashboard() {
     [state?.alertConfig]
   )
 
-  const detentsSentRef = useRef(false)
+  //const detentsSentRef = useRef(false)
 
   useEffect(() => {
     if (azimuthData) {
@@ -164,52 +165,6 @@ export function Dashboard() {
       setRpmData((prev) => [...prev, simulatorData.rpm])
     }
   }, [simulatorData])
-
-  // Send detent command to backend
-  useEffect(() => {
-    if (
-      alertConfig.enableDetents &&
-      !detentsSentRef.current &&
-      azimuthData !== undefined &&
-      azimuthData.position_pri !== 0
-    ) {
-      console.log('Trying to send detents')
-      // Loop through angle advice zones
-      for (const advice of angleAdvices) {
-        if (advice.type === AdviceType.advice) {
-          console.log('min,max angle: ', advice.minAngle, advice.maxAngle)
-          sendToBackend({
-            command: 'set_detent',
-            type: 'angle',
-            pos1: advice.minAngle,
-            pos2: advice.maxAngle,
-            detent: 1
-          })
-        }
-      }
-
-      // Loop through thrust advice zones
-      for (const advice of thrustAdvices) {
-        if (advice.type === AdviceType.advice) {
-          console.log('min,max thrust: ', advice.min, advice.max)
-          sendToBackend({
-            command: 'set_detent',
-            type: 'thrust',
-            pos1: advice.min,
-            pos2: advice.max,
-            detent: 1
-          })
-        }
-      }
-      detentsSentRef.current = true
-    }
-  }, [
-    angleAdvices,
-    azimuthData,
-    thrustAdvices,
-    sendToBackend,
-    alertConfig.enableDetents
-  ])
 
   // **1. Detect when an alert is triggered (T1) and what type it is**
   useEffect(() => {
@@ -282,6 +237,15 @@ export function Dashboard() {
     thrustAdvices,
     sendToBackend,
     alertConfig
+  })
+
+  // Use custom hook to handle detent feedback
+  useDetentFeedback({
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    alertConfig,
+    sendToBackend
   })
 
   const stopSimulation = () => {
