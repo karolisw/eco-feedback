@@ -329,11 +329,11 @@ class AzimuthController:
             print("[ERROR] Not connected to Modbus. Cannot set friction.")
             return False
         
-        friction_strength_reg = 0x07
+        friction_strength_reg = 7
 
         try:
             # Write friction strength
-            await self.client.write_register(address=friction_strength_reg, value=bool(friction), slave=self.slave_id)
+            await self.client.write_register(address=friction_strength_reg, value=friction, slave=self.slave_id)
             logger.info(f"Set friction value to {friction} at register {friction_strength_reg}")
 
             return True
