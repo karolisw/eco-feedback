@@ -25,7 +25,11 @@ export function Startup() {
   const [alertConfig, setAlertConfig] = useState<AlertConfig>({
     vibrationEnter: 1,
     enableVibration: true,
-    enableDetents: true
+    enableDetents: true,
+    adviceHighResistance: true,
+    regularHighResistance: false,
+    vibrationStrengthThruster: 1,
+    vibrationStrengthAngle: 1
   })
 
   const initialSimData: SimulatorData = {
@@ -292,6 +296,58 @@ export function Startup() {
               }
             />
           </div>
+          {alertConfig.enableVibration && (
+            <>
+              <div className="label-container">
+                <div className="label-wrapper">
+                  <span
+                    className="info-icon"
+                    data-tooltip="Set vibration strength for thruster caution zones"
+                  >
+                    ℹ
+                  </span>
+                  <label>Thruster Caution Vibration Strength</label>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={alertConfig.vibrationStrengthThruster ?? 1}
+                  onChange={(e) =>
+                    setAlertConfig((prev) => ({
+                      ...prev,
+                      vibrationStrengthThruster: Number(e.target.value)
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="label-container">
+                <div className="label-wrapper">
+                  <span
+                    className="info-icon"
+                    data-tooltip="Set vibration strength for angle caution zones"
+                  >
+                    ℹ
+                  </span>
+                  <label>Angle Caution Vibration Strength</label>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={alertConfig.vibrationStrengthAngle ?? 1}
+                  onChange={(e) =>
+                    setAlertConfig((prev) => ({
+                      ...prev,
+                      vibrationStrengthAngle: Number(e.target.value)
+                    }))
+                  }
+                />
+              </div>
+            </>
+          )}
+
           <div className="label-container">
             <div className="label-wrapper">
               <span className="info-icon" data-tooltip="Enable detent feedback">
@@ -306,6 +362,51 @@ export function Startup() {
                 setAlertConfig((prev) => ({
                   ...prev,
                   enableDetents: !prev.enableDetents
+                }))
+              }
+            />
+          </div>
+          {/* Toggle for High Resistance Inside Advice Zones */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Sets high resistance inside advice zones"
+              >
+                ℹ
+              </span>
+              <label>High Resistance Inside Advice Zones</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.adviceHighResistance}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  adviceHighResistance: !prev.adviceHighResistance
+                }))
+              }
+            />
+          </div>
+
+          {/* Toggle for High Resistance Outside Advice Zones */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Sets high resistance outside advice zones"
+              >
+                ℹ
+              </span>
+              <label>High Resistance Outside Advice Zones</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.regularHighResistance}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  regularHighResistance: !prev.regularHighResistance
                 }))
               }
             />

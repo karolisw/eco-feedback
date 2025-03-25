@@ -269,7 +269,7 @@ class AzimuthController:
             return False
         
         
-    async def set_detent(self, detent: int, type: int, pos1: int, pos2: int,):
+    async def set_detent(self, detent: int, type: int, pos: int):
         """
         Writes the detent value to the Modbus register.
 
@@ -294,10 +294,8 @@ class AzimuthController:
             if (type == "thrust"):
                 logger.info("Trying to set detents for thruster")
                 # The positioning of the detents
-                await self.client.write_register(address=thrust_hreg_pos1, value=pos1, slave=self.slave_id)
-                logger.info("Detent has been set (i think) for thruster pos1")
-                await self.client.write_register(address=thrust_hreg_pos2, value=pos2, slave=self.slave_id)
-                logger.info("Detent has been set (i think) for thruster pos2")
+                await self.client.write_register(address=thrust_hreg_pos1, value=pos, slave=self.slave_id)
+                logger.info("Detent has been setfor thruster pos")
 
                 # The strength of the detents
                 await self.client.write_register(address=strength_thrust_hreg, value=detent, slave=self.slave_id)
@@ -306,10 +304,8 @@ class AzimuthController:
                 return True
             if (type == "angle"):
                 # The positioning of the detents
-                await self.client.write_register(address=angle_hreg_pos1, value=pos1, slave=self.slave_id)
-                logger.info("Detent has been set (i think) for angle pos1")
-                await self.client.write_register(address=angle_hreg_pos2, value=pos2, slave=self.slave_id)
-                logger.info("Detent has been set (i think) for angle pos2")
+                await self.client.write_register(address=angle_hreg_pos1, value=pos, slave=self.slave_id)
+                logger.info("Detent has been set for angle pos")
 
                 # The strength of the detents
                 await self.client.write_register(address=strength_angle_hreg, value=detent, slave=self.slave_id)

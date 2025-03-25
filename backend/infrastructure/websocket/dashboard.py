@@ -100,11 +100,10 @@ class Dashboard:
                 logger.info("Detent update request received.")
                 detent = data.get("detent", 0)
                 type = data.get("type", 0)
-                pos1 = data.get("pos1", 0)
-                pos2 = data.get("pos2", 0)
+                pos = data.get("pos", 0)
                 logger.info(f"Setting detent to {detent}")
 
-                success = await self.controller.set_detent(detent, type, pos1, pos2)
+                success = await self.controller.set_detent(detent, type, pos)
                 if success:
                     logger.info("Detent successfully updated.")
                 else:

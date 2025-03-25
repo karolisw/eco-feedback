@@ -1,13 +1,12 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
-import { AdviceType } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
-import { memo, useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { memo, useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import '../styles/dashboard.css'
 import '../styles/instruments.css'
@@ -22,6 +21,9 @@ import {
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
 import { SetpointSliders } from '../components/SetpointSliders'
+import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
+import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
+import { useDetentFeedback } from '../hooks/useDetentFeedback'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -41,16 +43,12 @@ export function Dashboard() {
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
 
-  const lastSentVibration = useRef<number>(0)
-
   // Keep track of last sent command
   const lastSentCommand = useRef<{ position: number; angle: number } | null>(
     null
   )
 
   const alertTriggeredRef = useRef<boolean>(false)
-  const inThrustAdviceZoneRef = useRef<boolean>(false)
-  const inAngleAdviceZoneRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -114,22 +112,14 @@ export function Dashboard() {
     () =>
       state?.alertConfig ||
       ({
-        vibrationApproach: 1,
         vibrationEnter: 2,
-        vibrationRemain: 3,
-        resistanceApproach: 0,
-        resistanceEnter: 1,
-        resistanceRemain: 2,
-        detents: false,
-        feedbackDuration: 4000,
         enableVibration: true,
-        enableResistance: false,
-        enableDetents: false
+        enableDetents: false,
+        adviceHighResistance: true,
+        regularHighResistance: true
       } as AlertConfig),
     [state?.alertConfig]
   )
-
-  const detentsSentRef = useRef(false)
 
   useEffect(() => {
     if (azimuthData) {
@@ -170,185 +160,6 @@ export function Dashboard() {
       setRpmData((prev) => [...prev, simulatorData.rpm])
     }
   }, [simulatorData])
-
-  // Function to determine vibration strength based on alertConfig
-  const getVibrationStrength = useCallback(() => {
-    let strength = 0
-    const thrust = azimuthData.position_pri
-    const angle = azimuthData.position_sec
-    let type: AdviceType | null = null
-
-    // Check thrust alert zones
-    for (const advice of thrustAdvices) {
-      if (thrust >= advice.min && thrust <= advice.max) {
-        // if caution, then vibration enter, if advice then 0 in vibration strength
-        type = advice.type
-        strength = type === AdviceType.caution ? alertConfig.vibrationEnter : 0
-      }
-    }
-
-    // Check angle alert zones
-    for (const advice of angleAdvices) {
-      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
-        type = advice.type
-        strength = Math.max(
-          strength,
-          type === AdviceType.caution ? alertConfig.vibrationEnter : 0
-        )
-      }
-    }
-    return [strength, type]
-  }, [
-    angleAdvices,
-    azimuthData.position_sec,
-    azimuthData.position_pri,
-    thrustAdvices,
-    alertConfig
-  ])
-
-  // Send detent command to backend
-  useEffect(() => {
-    if (
-      alertConfig.enableDetents &&
-      !detentsSentRef.current &&
-      azimuthData !== undefined &&
-      azimuthData.position_pri !== 0
-    ) {
-      console.log('Trying to send detents')
-      // Loop through angle advice zones
-      for (const advice of angleAdvices) {
-        if (advice.type === AdviceType.advice) {
-          console.log('min,max angle: ', advice.minAngle, advice.maxAngle)
-          sendToBackend({
-            command: 'set_detent',
-            type: 'angle',
-            pos1: advice.minAngle,
-            pos2: advice.maxAngle,
-            detent: 1
-          })
-        }
-      }
-
-      // Loop through thrust advice zones
-      for (const advice of thrustAdvices) {
-        if (advice.type === AdviceType.advice) {
-          console.log('min,max thrust: ', advice.min, advice.max)
-          sendToBackend({
-            command: 'set_detent',
-            type: 'thrust',
-            pos1: advice.min,
-            pos2: advice.max,
-            detent: 1
-          })
-        }
-      }
-      detentsSentRef.current = true
-    }
-  }, [
-    angleAdvices,
-    azimuthData,
-    thrustAdvices,
-    sendToBackend,
-    alertConfig.enableDetents
-  ])
-
-  // Send change in friction strength to backend when entering or exiting advice zone for both thrust and angle
-  useEffect(() => {
-    if (!azimuthData) return
-
-    let inThrustAdvice = false
-    let inAngleAdvice = false
-
-    // Check thrust advice
-    for (const advice of thrustAdvices) {
-      if (
-        advice.type === AdviceType.advice &&
-        azimuthData.position_pri >= advice.min &&
-        azimuthData.position_pri <= advice.max
-      ) {
-        inThrustAdvice = true
-      }
-    }
-
-    // Check angle advice
-    for (const advice of angleAdvices) {
-      if (
-        advice.type === AdviceType.advice &&
-        azimuthData.position_sec >= advice.minAngle &&
-        azimuthData.position_sec <= advice.maxAngle
-      ) {
-        inAngleAdvice = true
-        break
-      }
-    }
-
-    // THRUST ENTRY
-    if (inThrustAdvice && !inThrustAdviceZoneRef.current) {
-      console.log('Entered THRUST advice zone')
-      sendToBackend({
-        command: 'set_friction_strength',
-        friction: 1
-      })
-      inThrustAdviceZoneRef.current = true
-    }
-
-    // THRUST EXIT
-    if (!inThrustAdvice && inThrustAdviceZoneRef.current) {
-      console.log('Exited THRUST advice zone')
-      sendToBackend({
-        command: 'set_friction_strength',
-        friction: 3
-      })
-      inThrustAdviceZoneRef.current = false
-    }
-
-    // ANGLE ENTRY
-    if (inAngleAdvice && !inAngleAdviceZoneRef.current) {
-      console.log('Entered ANGLE advice zone')
-      sendToBackend({
-        command: 'set_friction_strength',
-        friction: 1
-      })
-      inAngleAdviceZoneRef.current = true
-    }
-
-    // ANGLE EXIT
-    if (!inAngleAdvice && inAngleAdviceZoneRef.current) {
-      console.log('Exited ANGLE advice zone')
-      sendToBackend({
-        command: 'set_friction_strength',
-        friction: 3
-      })
-      inAngleAdviceZoneRef.current = false
-    }
-  }, [azimuthData, angleAdvices, thrustAdvices, sendToBackend])
-
-  //  Send vibration command to backend when entering or exiting advice zone
-  useEffect(() => {
-    if (!azimuthData) return
-
-    const vibrationStrength = getVibrationStrength()[0]
-    if (
-      vibrationStrength !== lastSentVibration.current &&
-      alertConfig.enableVibration
-    ) {
-      // Send vibration command to backend
-      sendToBackend({
-        command: 'set_vibration',
-        strength: vibrationStrength
-      })
-
-      // TODO add logic for the type that now exists in vibrationStrength[1] (if type==advice, then ...)
-      if (vibrationStrength != null && typeof vibrationStrength === 'number') {
-        lastSentVibration.current = vibrationStrength
-      }
-    }
-  }, [
-    azimuthData,
-    sendToBackend,
-    getVibrationStrength,
-    alertConfig.enableVibration
-  ])
 
   // **1. Detect when an alert is triggered (T1) and what type it is**
   useEffect(() => {
@@ -404,6 +215,33 @@ export function Dashboard() {
     thrustSetpoint,
     angleSetpoint
   ])
+
+  // Hook determines vibration strength based on alertConfig
+  useVibrationFeedback({
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    alertConfig,
+    sendToBackend
+  })
+
+  // Use custom hook to handle friction feedback
+  useFrictionFeedback({
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    sendToBackend,
+    alertConfig
+  })
+
+  // Use custom hook to handle detent feedback
+  useDetentFeedback({
+    azimuthData,
+    angleAdvices,
+    thrustAdvices,
+    alertConfig,
+    sendToBackend
+  })
 
   const stopSimulation = () => {
     // Send stop signal to simulator (8003)
