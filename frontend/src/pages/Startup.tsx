@@ -25,7 +25,9 @@ export function Startup() {
   const [alertConfig, setAlertConfig] = useState<AlertConfig>({
     vibrationEnter: 1,
     enableVibration: true,
-    enableDetents: true
+    enableDetents: true,
+    adviceHighResistance: true,
+    regularHighResistance: false
   })
 
   const initialSimData: SimulatorData = {
@@ -306,6 +308,51 @@ export function Startup() {
                 setAlertConfig((prev) => ({
                   ...prev,
                   enableDetents: !prev.enableDetents
+                }))
+              }
+            />
+          </div>
+          {/* Toggle for High Resistance Inside Advice Zones */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Sets high resistance inside advice zones"
+              >
+                ℹ
+              </span>
+              <label>High Resistance Inside Advice Zones</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.adviceHighResistance}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  adviceHighResistance: !prev.adviceHighResistance
+                }))
+              }
+            />
+          </div>
+
+          {/* Toggle for High Resistance Outside Advice Zones */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Sets high resistance outside advice zones"
+              >
+                ℹ
+              </span>
+              <label>High Resistance Outside Advice Zones</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.regularHighResistance}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  regularHighResistance: !prev.regularHighResistance
                 }))
               }
             />
