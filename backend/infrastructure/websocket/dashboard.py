@@ -53,7 +53,6 @@ class Dashboard:
                 formatted_data = self.format_data(raw_data)
                 
                 if formatted_data and formatted_data != self.latest_data and self.clients:
-                    logger.info("New Azimuth data, broadcasting...")
                     self.latest_data = formatted_data
                     
                 
@@ -68,21 +67,25 @@ class Dashboard:
             logger.info(f"Received WebSocket message: {message}")  
 
             data = json.loads(message)  # Parse JSON data
+            
+            logger.info(f"Command received: {data.get('command')}")
+
 
             # Handle setpoint updates
             if data.get("command") == "set_setpoint":
-                thrust_setpoint = data.get("thrust_setpoint", 50)
+                thrust_setpoint = data.get("thrust_setpoint", 0)
                 angle_setpoint = data.get("angle_setpoint", 0)
-                logger.info(f"Updating setpoints → Thrust: {thrust_setpoint}, Angle: {angle_setpoint}")
+                #logger.info(f"Updating setpoints → Thrust: {thrust_setpoint}, Angle: {angle_setpoint}")
 
                 success = self.controller.set_setpoint(thrust_setpoint, angle_setpoint)
                 if success:
                     logger.info("Setpoints successfully updated.")
                 else:
+                    await websocket.send_json(self.latest_data)
                     logger.error("Failed to update setpoints.")
 
             # Handle vibration updates
-            elif data.get("command") == "set_vibration":
+            if data.get("command") == "set_vibration":
                 vibration = data.get("strength", 0)
                 logger.info(f"Setting vibration to {vibration}")
 
@@ -91,16 +94,41 @@ class Dashboard:
                     logger.info("Vibration successfully updated.")
                 else:
                     logger.error("Failed to update vibration.")
+                    
+            # Handle detent updates
+            if data.get("command") == "set_detent":
+                logger.info("Detent update request received.")
+                detent = data.get("detent", 0)
+                type = data.get("type", 0)
+                pos1 = data.get("pos1", 0)
+                pos2 = data.get("pos2", 0)
+                logger.info(f"Setting detent to {detent}")
+
+                success = await self.controller.set_detent(detent, type, pos1, pos2)
+                if success:
+                    logger.info("Detent successfully updated.")
+                else:
+                    logger.error("Failed to update detent.")
+            
+            # Handle friction strength updates (usually alongside detent updates)
+            if data.get("command") == "set_friction_strength":
+                friction = data.get("friction", 0)
+                #logger.info(f"Setting friction strength to {friction}")
+                success = await self.controller.set_friction_strength(friction)
+                if success:
+                    logger.info("Friction strength successfully updated.")
+                else:
+                    logger.error("Failed to update friction strength.")
 
             # Handle stop simulation command
-            elif data.get("command") == "stop_simulation":
+            if data.get("command") == "stop_simulation":
                 avg_speed = data.get("avg_speed", 0)
                 avg_rpm = data.get("avg_rpm", 0)
                 total_consumption = data.get("total_consumption", 0)
                 run_time = data.get("run_time", 0)
                 configuration_number = data.get("configuration_number", 1)
 
-                logger.info("Stop simulation request received.")
+                #logger.info("Stop simulation request received.")
 
                 await self.database.store_data(
                     total_consumption=total_consumption,
@@ -122,9 +150,9 @@ class Dashboard:
                 if self.latest_data:
                     # Check for "empty" data: all values are exactly 0.0
                     if all(value == 0.0 for value in self.latest_data.values()):
-                        logger.warning("Skipping update: Detected empty/default azimuth data.")
+                        #logger.warning("Skipping update: Detected empty/default azimuth data.")
+                        pass
                     else:
-                        logger.info(f"Sending live azimuth data: {self.latest_data}")
                         await websocket.send_json(self.latest_data)
                 await asyncio.sleep(1)  # Prevent flooding
         except Exception as e:
