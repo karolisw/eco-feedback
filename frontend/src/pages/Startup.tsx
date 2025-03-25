@@ -23,17 +23,9 @@ export function Startup() {
 
   // Alert zone settings
   const [alertConfig, setAlertConfig] = useState<AlertConfig>({
-    vibrationApproach: 1,
-    vibrationEnter: 2,
-    vibrationRemain: 3,
-    resistanceApproach: 0,
-    resistanceEnter: 1,
-    resistanceRemain: 2,
-    detents: false,
-    feedbackDuration: 4000, // Default 4s
+    vibrationEnter: 1,
     enableVibration: true,
-    enableResistance: false,
-    enableDetents: false
+    enableDetents: true
   })
 
   const initialSimData: SimulatorData = {
@@ -247,27 +239,11 @@ export function Startup() {
         ))}
         <div className="alert-config-container">
           <h3>Haptic Feedback Configuration</h3>
-
           {[
-            {
-              key: 'vibrationApproach',
-              label: 'Vibration (Approaching)',
-              tooltip: 'Vibration strength when approaching alert zone'
-            },
             {
               key: 'vibrationEnter',
               label: 'Vibration (Entering)',
               tooltip: 'Vibration strength when entering alert zone'
-            },
-            {
-              key: 'vibrationRemain',
-              label: 'Vibration (Remaining)',
-              tooltip: 'Vibration strength when remaining in alert zone'
-            },
-            {
-              key: 'feedbackDuration',
-              label: 'Feedback Duration (ms)',
-              tooltip: 'How long feedback lasts (except remaining inside)'
             }
           ].map(({ key, label, tooltip }) => (
             <div key={key} className="label-container">
@@ -316,24 +292,20 @@ export function Startup() {
               }
             />
           </div>
-
           <div className="label-container">
             <div className="label-wrapper">
-              <span
-                className="info-icon"
-                data-tooltip="Enable resistance feedback"
-              >
+              <span className="info-icon" data-tooltip="Enable detent feedback">
                 ℹ
               </span>
-              <label>Enable Resistance</label>
+              <label>Enable Detents</label>
             </div>
             <input
               type="checkbox"
-              checked={alertConfig.enableResistance}
+              checked={alertConfig.enableDetents}
               onChange={() =>
                 setAlertConfig((prev) => ({
                   ...prev,
-                  enableResistance: !prev.enableResistance
+                  enableDetents: !prev.enableDetents
                 }))
               }
             />
