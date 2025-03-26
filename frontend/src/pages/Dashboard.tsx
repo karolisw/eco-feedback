@@ -156,8 +156,8 @@ export function Dashboard() {
   // Store speed and RPM when data arrives
   useEffect(() => {
     if (simulatorData) {
-      setSpeedData((prev) => [...prev, simulatorData.speed])
-      setRpmData((prev) => [...prev, simulatorData.rpm])
+      setSpeedData((prev) => [...prev.slice(-500), simulatorData.speed])
+      setRpmData((prev) => [...prev.slice(-500), simulatorData.rpm])
     }
   }, [simulatorData])
 
@@ -278,6 +278,7 @@ export function Dashboard() {
   }
 
   const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
+    console.log('handling set point change')
     // Update state immediately
     if (type === 'thrust') {
       setThrustSetpoint(value)
@@ -288,8 +289,8 @@ export function Dashboard() {
     // Send a command to the backend
     sendToBackend({
       command: 'set_setpoint',
-      thrust_setpoint: 70,
-      angle_setpoint: -30
+      thrust_setpoint: type === 'thrust' ? value : thrustSetpoint,
+      angle_setpoint: type === 'angle' ? value : angleSetpoint
     })
   }
 
