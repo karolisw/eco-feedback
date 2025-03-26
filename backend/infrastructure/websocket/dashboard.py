@@ -25,12 +25,12 @@ class Dashboard:
         """Assigns a database instance to the dashboard singleton."""
         self.database = database
         
-        
-        
-    """
     async def fetch_data(self):
         while True:
             try:
+                if not self.controller.client or not self.controller.client.connected:
+                    await asyncio.sleep(0.1)
+                    continue  # Try again on next loop
                 raw_data = await self.controller.fetch_dashboard_data()  #await self.controller.get_latest_data() # await self.controller.fetch_dashboard_data()
                 formatted_data = self.format_data(raw_data)
                 
@@ -42,27 +42,8 @@ class Dashboard:
                 logger.error(f"Error fetching register data: {e}")
 
             await asyncio.sleep(0.1)  # Ensures it doesn't flood the system
-    """
     
-    async def fetch_data(self):
-        while True:
-            try:
-                # Skip fetch if controller isn't ready
-                if not self.controller.client or not self.controller.client.connected:
-                    await asyncio.sleep(0.1)
-                    continue  # Try again on next loop
-
-                raw_data = await self.controller.fetch_dashboard_data()
-                formatted_data = self.format_data(raw_data)
-
-                if formatted_data and formatted_data != self.latest_data and self.clients:
-                    self.latest_data = formatted_data
-
-            except Exception as e:
-                logger.error(f"Error fetching register data: {e}")
-
-            await asyncio.sleep(0.1)  # Prevents tight loop
-
+ 
     async def handle_client_messages(self, websocket: WebSocket, message: str):
         """Handles incoming WebSocket messages and processes commands."""
         try:
@@ -208,4 +189,3 @@ def start_dashboard():
 async def websocket_endpoint(websocket: WebSocket):
     await dashboard.websocket_endpoint(websocket)
     
-
