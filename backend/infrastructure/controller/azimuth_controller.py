@@ -282,10 +282,10 @@ class AzimuthController:
             return False
         
         thrust_hreg_pos1 = 140
-        thrust_hreg_pos2 = 141
+        #thrust_hreg_pos2 = 141
         
         angle_hreg_pos1 = 240
-        angle_hreg_pos2 = 241
+        #angle_hreg_pos2 = 241
         
         strength_thrust_hreg = 100
         strength_angle_hreg = 200
@@ -295,7 +295,8 @@ class AzimuthController:
                 logger.info("Trying to set detents for thruster")
                 # The positioning of the detents
                 await self.client.write_register(address=thrust_hreg_pos1, value=pos, slave=self.slave_id)
-                logger.info("Detent has been setfor thruster pos")
+                logger.info(f"Detent has been set for thruster with address: {thrust_hreg_pos1}")
+                logger.info(f"and value: {pos}")
 
                 # The strength of the detents
                 await self.client.write_register(address=strength_thrust_hreg, value=detent, slave=self.slave_id)
@@ -305,8 +306,8 @@ class AzimuthController:
             if (type == "angle"):
                 # The positioning of the detents
                 await self.client.write_register(address=angle_hreg_pos1, value=pos, slave=self.slave_id)
-                logger.info("Detent has been set for angle pos")
-
+                logger.info(f"Detent has been set for angle with address: {angle_hreg_pos1}")
+                logger.info(f"and value: {pos}")
                 # The strength of the detents
                 await self.client.write_register(address=strength_angle_hreg, value=detent, slave=self.slave_id)
                 logger.info(f" Set detent value to {detent} at register {strength_angle_hreg}")
