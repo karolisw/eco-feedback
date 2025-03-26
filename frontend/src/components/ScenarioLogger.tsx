@@ -10,7 +10,7 @@ export function ScenarioLogger({
   angleAdvices,
   configFileName
 }: {
-  simulatorData: { position_pri: number; angle_pri: number }
+  simulatorData: { thrust: number; angle: number }
   simulationRunning: boolean
   thrustAdvices: { min: number; max: number; type: 'advice' | 'caution' }[]
   angleAdvices: {
@@ -113,8 +113,8 @@ export function ScenarioLogger({
 
     for (const advice of thrustAdvices) {
       if (
-        simulatorData.position_pri >= advice.min &&
-        simulatorData.position_pri <= advice.max
+        simulatorData.thrust >= advice.min &&
+        simulatorData.thrust <= advice.max
       ) {
         thrustAlertNow = true
         detectedThrustType = advice.type
@@ -123,8 +123,8 @@ export function ScenarioLogger({
 
     for (const advice of angleAdvices) {
       if (
-        simulatorData.angle_pri >= advice.minAngle &&
-        simulatorData.angle_pri <= advice.maxAngle
+        simulatorData.angle >= advice.minAngle &&
+        simulatorData.angle <= advice.maxAngle
       ) {
         angleAlertNow = true
         detectedAngleType = advice.type
@@ -182,8 +182,8 @@ export function ScenarioLogger({
       alertActive.current.thrust &&
       !thrustAdvices.some(
         (advice) =>
-          simulatorData.position_pri >= advice.min &&
-          simulatorData.position_pri <= advice.max
+          simulatorData.thrust >= advice.min &&
+          simulatorData.thrust <= advice.max
       )
     ) {
       console.log('Exiting thrust alert zone')
@@ -195,8 +195,8 @@ export function ScenarioLogger({
         ...prevData,
         {
           timestamp: currentTime,
-          thrust: simulatorData.position_pri,
-          azimuthAngle: simulatorData.angle_pri,
+          thrust: simulatorData.thrust,
+          azimuthAngle: simulatorData.angle,
           reactionTime: firstResponseTime.current.thrust
             ? firstResponseTime.current.thrust -
               (lastAlertTime.current.thrust ?? 0)
@@ -216,8 +216,8 @@ export function ScenarioLogger({
       alertActive.current.angle &&
       !angleAdvices.some(
         (advice) =>
-          simulatorData.angle_pri >= advice.minAngle &&
-          simulatorData.angle_pri <= advice.maxAngle
+          simulatorData.angle >= advice.minAngle &&
+          simulatorData.angle <= advice.maxAngle
       )
     ) {
       console.log('Exiting angle alert zone')
@@ -229,8 +229,8 @@ export function ScenarioLogger({
         ...prevData,
         {
           timestamp: currentTime,
-          thrust: simulatorData.position_pri,
-          azimuthAngle: simulatorData.angle_pri,
+          thrust: simulatorData.thrust,
+          azimuthAngle: simulatorData.angle,
           reactionTime: firstResponseTime.current.angle
             ? firstResponseTime.current.angle -
               (lastAlertTime.current.angle ?? 0)
