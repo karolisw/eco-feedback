@@ -24,6 +24,7 @@ import { SetpointSliders } from '../components/SetpointSliders'
 import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
 import { useDetentFeedback } from '../hooks/useDetentFeedback'
+import { useAlertDetection } from '../hooks/useAlertDetection'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -84,11 +85,11 @@ export function Dashboard() {
   // Memoized Component to prevent unnecessary re-renders
   const MemoizedAzimuthThruster = memo(AzimuthThruster)
   const MemoizedCompass = memo(Compass)
-  const thrustValue = useMemo(
+  const thrust = useMemo(
     () => azimuthData.position_pri,
     [azimuthData.position_pri]
   )
-  const angleValue = useMemo(
+  const angle = useMemo(
     () => azimuthData.position_sec,
     [azimuthData.position_sec]
   )
@@ -165,47 +166,17 @@ export function Dashboard() {
     }
   }, [azimuthData, sendToSimulator])
 
-  // Store speed and RPM when data arrives
-  useEffect(() => {
-    if (simulatorData) {
-      setSpeedData((prev) => [...prev.slice(-500), simulatorData.speed])
-      setRpmData((prev) => [...prev.slice(-500), simulatorData.rpm])
+  useAlertDetection({
+    angle,
+    thrust,
+    angleAdvices,
+    thrustAdvices,
+    simulationRunning,
+    onAlertDetected: (type, timestamp) => {
+      setAlertType(type)
+      setAlertTime(timestamp)
     }
-  }, [simulatorData])
-
-  // **1. Detect when an alert is triggered (T1) and what type it is**
-  useEffect(() => {
-    if (!simulationRunning || !azimuthData) return
-
-    let alertNow = false
-    let detectedType: 'advice' | 'caution' | null = null
-
-    for (const advice of thrustAdvices) {
-      if (
-        azimuthData.position_pri >= advice.min &&
-        azimuthData.position_pri <= advice.max
-      ) {
-        alertNow = true
-        detectedType = advice.type
-      }
-    }
-
-    for (const advice of angleAdvices) {
-      if (
-        azimuthData.angle_pri >= advice.minAngle &&
-        azimuthData.angle_pri <= advice.maxAngle
-      ) {
-        alertNow = true
-        detectedType = advice.type
-      }
-    }
-
-    if (alertNow && !alertTriggeredRef.current) {
-      alertTriggeredRef.current = true
-      setAlertTime(Date.now()) // Set T1
-      setAlertType(detectedType) // Store type of alert
-    }
-  }, [azimuthData, thrustAdvices, angleAdvices, simulationRunning])
+  })
 
   // **2. Detect operator response (T2)**
   useEffect(() => {
@@ -230,7 +201,8 @@ export function Dashboard() {
 
   // Hook determines vibration strength based on alertConfig
   useVibrationFeedback({
-    azimuthData,
+    thrust,
+    angle,
     angleAdvices,
     thrustAdvices,
     alertConfig,
@@ -239,7 +211,8 @@ export function Dashboard() {
 
   // Use custom hook to handle friction feedback
   useFrictionFeedback({
-    azimuthData,
+    thrust,
+    angle,
     angleAdvices,
     thrustAdvices,
     sendToBackend,
@@ -248,7 +221,6 @@ export function Dashboard() {
 
   // Use custom hook to handle detent feedback
   useDetentFeedback({
-    azimuthData,
     angleAdvices,
     thrustAdvices,
     alertConfig,
@@ -311,7 +283,7 @@ export function Dashboard() {
       {/* Simulator Panel */}
       {simulationRunning && (
         <div className="simulator-panel">
-          <iframe src="http://127.0.0.1:8002/index.html" />
+          <iframe src="http://127.0.0.1:8002/index.html" loading="lazy" />
         </div>
       )}
       <div className="ui-panel">
@@ -374,8 +346,8 @@ export function Dashboard() {
           </div>
           <div className="instrument-panel-row">
             <MemoizedAzimuthThruster
-              thrust={thrustValue}
-              angle={negativeAngleToRealAngle(angleValue)}
+              thrust={thrust}
+              angle={negativeAngleToRealAngle(angle)}
               thrustSetPoint={thrustSetpoint}
               angleSetpoint={angleSetpoint}
               touching={true}
