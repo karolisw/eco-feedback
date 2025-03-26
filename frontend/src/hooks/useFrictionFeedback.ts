@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
-import { DashboardData } from '../types/DashboardData'
 import { AlertConfig } from '../types/AlertConfig'
 import { getAdviceZoneStatus } from '../utils/getAdviceZoneStatus'
 
 type UseFrictionFeedbackParams = {
-  azimuthData: DashboardData
+  thrust: number
+  angle: number
   angleAdvices: AngleAdvice[]
   thrustAdvices: LinearAdvice[]
   sendToBackend: (data: unknown) => void
@@ -14,7 +14,8 @@ type UseFrictionFeedbackParams = {
 }
 
 export function useFrictionFeedback({
-  azimuthData,
+  thrust,
+  angle,
   angleAdvices,
   thrustAdvices,
   sendToBackend,
@@ -24,13 +25,14 @@ export function useFrictionFeedback({
   const inAngleAdviceZoneRef = useRef(false)
 
   useEffect(() => {
-    if (!azimuthData) return
+    if (thrust === undefined || angle === undefined) return
 
     const {
       inThrustAdvice,
       inAngleAdvice
     } = getAdviceZoneStatus({
-      azimuthData,
+      thrust,
+      angle,
       angleAdvices,
       thrustAdvices
     })
@@ -78,7 +80,8 @@ export function useFrictionFeedback({
       inAngleAdviceZoneRef.current = false
     }
   }, [
-    azimuthData,
+    thrust,
+    angle,
     angleAdvices,
     thrustAdvices,
     sendToBackend,

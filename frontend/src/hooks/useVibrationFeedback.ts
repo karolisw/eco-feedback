@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { AdviceType, AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
-import { DashboardData } from '../types/DashboardData'
 import { AlertConfig } from '../types/AlertConfig'
 
 type UseVibrationFeedbackProps = {
-  azimuthData: DashboardData
+  thrust: number
+  angle: number
   angleAdvices: AngleAdvice[]
   thrustAdvices: LinearAdvice[]
   alertConfig: AlertConfig
@@ -14,7 +14,8 @@ type UseVibrationFeedbackProps = {
 }
 
 export function useVibrationFeedback({
-  azimuthData,
+  thrust,
+  angle,
   angleAdvices,
   thrustAdvices,
   alertConfig,
@@ -29,8 +30,8 @@ export function useVibrationFeedback({
     // Check thruster caution zone
     for (const advice of thrustAdvices) {
       if (
-        azimuthData.position_pri >= advice.min &&
-        azimuthData.position_pri <= advice.max &&
+        thrust >= advice.min &&
+        thrust <= advice.max &&
         advice.type === AdviceType.caution
       ) {
         type = AdviceType.caution
@@ -41,8 +42,8 @@ export function useVibrationFeedback({
     // Check angle caution zone
     for (const advice of angleAdvices) {
       if (
-        azimuthData.position_sec >= advice.minAngle &&
-        azimuthData.position_sec <= advice.maxAngle &&
+        angle >= advice.minAngle &&
+        angle <= advice.maxAngle &&
         advice.type === AdviceType.caution
       ) {
         type =  AdviceType.caution
@@ -51,17 +52,11 @@ export function useVibrationFeedback({
     }
 
     return [strength, type]
-  }, [
-    angleAdvices,
-    thrustAdvices,
-    azimuthData.position_pri,
-    azimuthData.position_sec,
-    alertConfig.vibrationStrengthThruster,
-    alertConfig.vibrationStrengthAngle
-  ])
+  }, [thrustAdvices, angleAdvices, thrust, angle, alertConfig.vibrationStrengthThruster, alertConfig.vibrationStrengthAngle])
+
 
   useEffect(() => {
-    if (!azimuthData) return
+    if (thrust === undefined || angle === undefined) return
 
     const vibrationStrength = getVibrationStrength()[0]
     if (
@@ -78,7 +73,7 @@ export function useVibrationFeedback({
       }
     }
   }, [
-    azimuthData,
+    thrust,angle,
     getVibrationStrength,
     sendToBackend,
     alertConfig.enableVibration
