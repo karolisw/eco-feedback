@@ -1,6 +1,6 @@
 SECTION,NAME,REG,ADD,CAN,R-ONLY,TYPE,GEN,AX1,AX2,DEF,MIN,MAX,UNIT,PER,SECURE,DEV,SECTION_INDEX
 Functions and sensors,ENABLE_HOMING,COIL,x00,,,BOOL,X,X,X,0,,,,,,,1
-Functions and sensors,ENABLE_DETENTS,COIL,x01,,,BOOL,X,X,X,0,,,,,,,1
+Functions and sensors,ENABLE_DETENTS,COIL,x01,,,BOOL,X,X,X,1,,,,,,,1
 Functions and sensors,ENABLE_VIBRATION,COIL,x02,,,BOOL,X,X,X,0,,,,,,,1
 Functions and sensors,ENABLE_BOUNDARIES,COIL,x03,,,BOOL,X,X,X,0,,,,,,,1
 Functions and sensors,ENABLE_SETPOINT,COIL,x04,,,BOOL,X,X,X,0,,,,,,,1
@@ -46,7 +46,7 @@ LED settings,ZONE_04_MAX,HREG,x28,,,INT,X,X,X,0,-180,180,% or °,X,,,2
 Boundary settings,LOWER_BOUNDARY,HREG,x30,,,INT,X,X,X,-180,-180,0,% or °,X,,,3
 Boundary settings,UPPER_BOUNDARY,HREG,x31,,,INT,X,X,X,180,0,180,% or °,X,,,3
 Detent settings,ENABLE_DETENT_01,COIL,x40,,,BOOL,X,X,X,1,,,,X,,,4
-Detent settings,ENABLE_DETENT_02,COIL,x41,,,BOOL,X,X,X,0,,,,X,,,4
+Detent settings,ENABLE_DETENT_02,COIL,x41,,,BOOL,X,X,X,1,,,,X,,,4
 Detent settings,ENABLE_DETENT_03,COIL,x42,,,BOOL,X,X,X,0,,,,X,,,4
 Detent settings,ENABLE_DETENT_04,COIL,x43,,,BOOL,X,X,X,0,,,,X,,,4
 Detent settings,ENABLE_DETENT_05,COIL,x44,,,BOOL,X,X,X,0,,,,X,,,4
