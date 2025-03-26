@@ -153,7 +153,6 @@
   }
 }
 
-
 /* Alert Configuration Panel */
 .alert-config-container {
   margin-top: 20px;
@@ -161,7 +160,7 @@
   text-align: left;
   display: flex;
   flex-direction: column;
-  justify-content:stretch;
+  justify-content: stretch;
   gap: 10px;
   width: 90%;
   max-width: 600px;
@@ -185,7 +184,7 @@
 
 /* Ensures all inputs are the same width and align vertically */
 .label-container input {
-  flex: 1;  /* Makes inputs expand evenly */
+  flex: 1; /* Makes inputs expand evenly */
   min-width: 100px;
   max-width: 150px;
   padding: 5px;

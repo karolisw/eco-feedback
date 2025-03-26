@@ -1,7 +1,6 @@
 import json
 import logging
 import asyncio
-import itertools
 from persistance.database import Database
 from fastapi import APIRouter, WebSocket
 from ..controller.azimuth_controller import controller
@@ -22,34 +21,17 @@ class Dashboard:
         self.controller = controller  # Global AzimuthController instance
         self.database = None  
         
-        # Mock data generators
-        #self.mock_thrust = itertools.cycle([40,50,60,70,80,90,100,90,80,70,60,50])  # Simulates increasing & decreasing thrust
-        #self.mock_angle = itertools.cycle([0, 15, 30, 45, 50,60,70,80,90,100, 110, 120,130,140,150,160,180,170,160,150,130,120,110,100,90,80,70,60,50,40,30, 15, 0, -15, -30, -45, -60, -75, -90, -105,-120,-145,-160, -175, -160,-145,-120,-105,-90,-75,-60,-45, -30, -15, 0])  # Oscillates rudder angle
-        
     def set_database(self, database: Database):
         """Assigns a database instance to the dashboard singleton."""
         self.database = database
         
-
+        
+        
+    """
     async def fetch_data(self):
         while True:
             try:
-                raw_data = await self.controller.get_latest_data() # TODO method is slow (ca 2.5s) - fix
-                
-                # If no real data, send dynamic mock data
-                
-                """
-                if not raw_data:
-                    raw_data = {
-                        "IREG_0_100": next(self.mock_thrust),  # Simulates a gradual thrust change
-                        "IREG_0_200": 0,
-                        "IREG_2_100": next(self.mock_angle),  # Simulates rudder angle adjustments
-                        "IREG_2_200": 0,
-                        "IREG_4_100": 50,  # Simulated setpoint for primary thruster
-                        "IREG_4_200": 10   # Simulated setpoint for secondary thruster
-                    }
-                """
-                
+                raw_data = await self.controller.fetch_dashboard_data()  #await self.controller.get_latest_data() # await self.controller.fetch_dashboard_data()
                 formatted_data = self.format_data(raw_data)
                 
                 if formatted_data and formatted_data != self.latest_data and self.clients:
@@ -59,8 +41,28 @@ class Dashboard:
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
-            await asyncio.sleep(1)  # Ensures it doesn't flood the system
-            
+            await asyncio.sleep(0.1)  # Ensures it doesn't flood the system
+    """
+    
+    async def fetch_data(self):
+        while True:
+            try:
+                # Skip fetch if controller isn't ready
+                if not self.controller.client or not self.controller.client.connected:
+                    await asyncio.sleep(0.1)
+                    continue  # Try again on next loop
+
+                raw_data = await self.controller.fetch_dashboard_data()
+                formatted_data = self.format_data(raw_data)
+
+                if formatted_data and formatted_data != self.latest_data and self.clients:
+                    self.latest_data = formatted_data
+
+            except Exception as e:
+                logger.error(f"Error fetching register data: {e}")
+
+            await asyncio.sleep(0.1)  # Prevents tight loop
+
     async def handle_client_messages(self, websocket: WebSocket, message: str):
         """Handles incoming WebSocket messages and processes commands."""
         try:
@@ -153,7 +155,7 @@ class Dashboard:
                         pass
                     else:
                         await websocket.send_json(self.latest_data)
-                await asyncio.sleep(1)  # Prevent flooding
+                await asyncio.sleep(0.1)  # Prevent flooding
         except Exception as e:
             logger.error(f"Error sending live updates: {e}")
 

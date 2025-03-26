@@ -30,7 +30,7 @@ async def start_services():
         if not connected:
             logger.warning("Failed to connect to Modbus server. Aborting start_services.")
             return  # Exit function without starting update loop
-        asyncio.create_task(controller.update_data())  # Run update in background
+        #asyncio.create_task(controller.update_data())  # Run update in background
 
     except Exception as e:
         logger.error(f"Unexpected error while starting controller: {e}")

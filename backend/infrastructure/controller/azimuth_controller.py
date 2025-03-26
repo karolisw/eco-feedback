@@ -108,7 +108,6 @@ class AzimuthController:
             return None
 
     def assign_registers(self):
-        """Creates a dictionary of registers based on the CSV file."""
         try:
             logger.info("Assigning registers...")
             data = self.read_csv()
@@ -117,24 +116,35 @@ class AzimuthController:
 
             regs = {}
             for row in data:
-                reg_type = row[2]  # COIL, ISTS, HREG, IREG
+                reg_type = row[2]
                 address = int(row[3].strip("x")) if row[3] else None
-                data_type = row[6]  # FLOAT, INT, etc.
+                data_type = row[6]
 
-                key = f"{reg_type}_{address}"
-                regs[key] = {
-                    "reg_type": reg_type,
-                    "address": address,
-                    "data_type": data_type,
-                }
+                if reg_type == "IREG" and data_type == "FLOAT":
+                    for offset in [100, 200]:
+                        key = f"{reg_type}_{address}_{offset}"
+                        regs[key] = {
+                            "reg_type": reg_type,
+                            "address": address + offset,
+                            "data_type": data_type
+                        }
+                else:
+                    key = f"{reg_type}_{address}"
+                    regs[key] = {
+                        "reg_type": reg_type,
+                        "address": address,
+                        "data_type": data_type
+                    }
 
             self.registers = regs
-            
             logger.info(f"Assigned {len(regs)} registers.")
+            for key, reg in self.registers.items():
+                logger.info(f"Register key: {key}, Address: {reg['address']}, Type: {reg['data_type']}")
+
         except Exception as e:
             logger.error(f"Failed to assign registers: {e}")
-
-    
+            
+        
     async def fetch_register_data(self):
         #logger.info("Fetching register data...")
         if not self.client or not self.client.connected:
@@ -344,11 +354,60 @@ class AzimuthController:
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""
-        #return self.latest_data.copy()
-        #logger.info(f"Latest data: {self.latest_data}")
         return self.latest_data.copy()
-        #with self.lock:
-         #   return self.latest_data.copy() 
+    
+    async def fetch_dashboard_data(self):
+        """Fetches only the registers required for the dashboard."""
+        if not self.client or not self.client.connected:
+            logger.warning("[DASHBOARD] Not connected to Modbus server.")
+            return {}
+
+        # Only the exact keys that matter for the dashboard
+        dashboard_keys = [
+            "IREG_0_100", "IREG_0_200",
+            "IREG_2_100", "IREG_2_200",
+            "IREG_4_100", "IREG_4_200"
+        ]
+
+        data_values = {}
+
+        async with self.lock:
+            for key in dashboard_keys:
+                reg = self.registers.get(key)
+                if not reg:
+                    logger.warning(f"[DASHBOARD] Register not found in config: {key}")
+                    continue
+
+                reg_type = reg["reg_type"]
+                address = reg["address"]
+                data_type = reg["data_type"]
+
+                try:
+                    if reg_type == "IREG" and data_type == "FLOAT":
+                        result = await self.client.read_input_registers(address, count=2, slave=self.slave_id)
+                        if result and result.registers:
+                            value = self.client.convert_from_registers(
+                                result.registers, self.DATATYPE.FLOAT32, word_order="little"
+                            )
+                            data_values[key] = round(value, 3)
+                        else:
+                            logger.warning(f"[DASHBOARD] No result when reading {key}")
+
+                    elif reg_type == "IREG":
+                        result = await self.client.read_input_registers(address, count=1, slave=self.slave_id)
+                        if result and result.registers:
+                            raw_value = result.registers[0]
+                            value = raw_value - 65536 if raw_value > 32767 else raw_value
+                            data_values[key] = round(value, 3)
+                        else:
+                            logger.warning(f"[DASHBOARD] No result when reading {key}")
+
+                except Exception as e:
+                    logger.error(f"[DASHBOARD] Failed to read {key}: {e}")
+
+        return data_values
+
+
 
     async def update_data(self, interval=0.1):
         """Continuously fetches data every 'interval' seconds."""
@@ -362,7 +421,7 @@ class AzimuthController:
         print("[INFO] Assigning registers...")
         self.assign_registers()
         await self.connect()  # Ensure connection is established
-        asyncio.create_task(self.update_data())  # Run update in background
+        #asyncio.create_task(self.update_data())  # Run update in background
 
         
 controller = AzimuthController()
