@@ -25,6 +25,7 @@ import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
 import { useDetentFeedback } from '../hooks/useDetentFeedback'
 import { useAlertDetection } from '../hooks/useAlertDetection'
+import { useOperatorResponse } from '../hooks/useOperatorResponse'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -49,7 +50,7 @@ export function Dashboard() {
     null
   )
 
-  const alertTriggeredRef = useRef<boolean>(false)
+  //const alertTriggeredRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -179,25 +180,19 @@ export function Dashboard() {
   })
 
   // **2. Detect operator response (T2)**
-  useEffect(() => {
-    if (!alertTriggeredRef.current || !simulationRunning || alertTime === null)
-      return
-
-    if (
-      azimuthData.position_pri !== thrustSetpoint ||
-      azimuthData.angle_pri !== angleSetpoint
-    ) {
-      alertTriggeredRef.current = false // Reset alert
-      setAlertTime(null) // Reset T1
-    }
-  }, [
-    azimuthData.position_pri,
-    azimuthData.angle_pri,
+  useOperatorResponse({
     simulationRunning,
     alertTime,
+    thrust,
+    angle,
     thrustSetpoint,
-    angleSetpoint
-  ])
+    angleSetpoint,
+    onResponse: () => {
+      setAlertTime(null)
+      // optionally reset alert type or add logging
+      // alertTriggeredRef.current = false
+    }
+  })
 
   // Hook determines vibration strength based on alertConfig
   useVibrationFeedback({
