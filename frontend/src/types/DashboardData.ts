@@ -1,8 +1,6 @@
 export type DashboardData = {
   position_pri: number
   position_sec: number
-  angle_pri: number
-  angle_sec: number
   pos_setpoint_pri: number
   pos_setpoint_sec: number
 }
@@ -18,5 +16,5 @@ export type SimulatorData = {
   consumedTotal: number
   checkpoints: number
   angle: number
-  power: number
+  thrust: number
 }
