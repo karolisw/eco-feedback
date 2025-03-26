@@ -1,7 +1,6 @@
 import json
 import logging
 import asyncio
-import itertools
 from persistance.database import Database
 from fastapi import APIRouter, WebSocket
 from ..controller.azimuth_controller import controller
@@ -59,7 +58,7 @@ class Dashboard:
             except Exception as e:
                 logger.error(f"Error fetching register data: {e}")
 
-            await asyncio.sleep(1)  # Ensures it doesn't flood the system
+            await asyncio.sleep(0.1)  # Ensures it doesn't flood the system
             
     async def handle_client_messages(self, websocket: WebSocket, message: str):
         """Handles incoming WebSocket messages and processes commands."""
@@ -153,7 +152,7 @@ class Dashboard:
                         pass
                     else:
                         await websocket.send_json(self.latest_data)
-                await asyncio.sleep(1)  # Prevent flooding
+                await asyncio.sleep(0.1)  # Prevent flooding
         except Exception as e:
             logger.error(f"Error sending live updates: {e}")
 
