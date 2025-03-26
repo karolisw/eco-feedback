@@ -1,14 +1,15 @@
 import { AdviceType, AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
-import { DashboardData } from '../types/DashboardData'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 
 
 export function getAdviceZoneStatus({
-    azimuthData,
+    thrust,
+    angle,
     angleAdvices,
     thrustAdvices
   }: {
-    azimuthData: DashboardData
+    thrust: number
+    angle: number
     angleAdvices: AngleAdvice[]
     thrustAdvices: LinearAdvice[]
   }) {
@@ -18,14 +19,14 @@ export function getAdviceZoneStatus({
     let angleType: AdviceType | null = null
   
     for (const advice of thrustAdvices) {
-      if (azimuthData.position_pri >= advice.min && azimuthData.position_pri <= advice.max) {
+      if (thrust >= advice.min && thrust <= advice.max) {
         inThrustAdvice = true
         thrustType = advice.type
       }
     }
   
     for (const advice of angleAdvices) {
-      if (azimuthData.position_sec >= advice.minAngle && azimuthData.position_sec <= advice.maxAngle) {
+      if (angle >= advice.minAngle && angle <= advice.maxAngle) {
         inAngleAdvice = true
         angleType = advice.type
       }
