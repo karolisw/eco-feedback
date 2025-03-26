@@ -30,7 +30,7 @@ import { useOperatorResponse } from '../hooks/useOperatorResponse'
 type LocationState = {
   angleAdvices?: AngleAdvice[]
   thrustAdvices?: LinearAdvice[]
-  alertConfig?: AlertConfig //TODO could write this into a csv by passing it to ScenarioLogger if necessary
+  alertConfig?: AlertConfig
   selectedConfig: string
 }
 
@@ -40,23 +40,18 @@ export function Dashboard() {
   const [angleSetpoint, setAngleSetpoint] = useState<number>(0)
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
-  //const [alertTriggered, setAlertTriggered] = useState<boolean>(false) // For logging purposes
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const navigate = useNavigate()
 
   // Keep track of last sent command
-  const lastSentCommand = useRef<{ position: number; angle: number } | null>(
-    null
-  )
+  const lastSentCommand = useRef<{ thrust: number; angle: number } | null>(null)
 
   //const alertTriggeredRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
     position_sec: 0,
-    angle_pri: 0,
-    angle_sec: 0,
     pos_setpoint_pri: 0,
     pos_setpoint_sec: 0
   }
@@ -71,7 +66,7 @@ export function Dashboard() {
     consumptionRate: 0,
     consumedTotal: 0,
     checkpoints: 3,
-    power: 0, // Power of azimuth thruster
+    thrust: 0, // Power of azimuth thruster
     angle: 0 // Angle of azimuth thruster
   }
 
@@ -140,14 +135,14 @@ export function Dashboard() {
       // Prepare new command
       const newCommand = {
         command: 'navigate',
-        position: azimuthData.position_pri,
-        angle: azimuthData.angle_pri
+        thrust: azimuthData.position_pri,
+        angle: azimuthData.position_sec
       }
       // Skip if either of the newCommand values are NaN or undefined
       if (
-        isNaN(newCommand.position) ||
+        isNaN(newCommand.thrust) ||
         isNaN(newCommand.angle) ||
-        newCommand.position === undefined ||
+        newCommand.thrust === undefined ||
         newCommand.angle === undefined
       ) {
         return
@@ -156,9 +151,10 @@ export function Dashboard() {
       // Only send if data changed
       if (
         !lastSentCommand.current ||
-        lastSentCommand.current.position !== newCommand.position ||
+        lastSentCommand.current.thrust !== newCommand.thrust ||
         lastSentCommand.current.angle !== newCommand.angle
       ) {
+        console.log('sending this to simulator: ', newCommand)
         sendToSimulator(JSON.stringify(newCommand))
         lastSentCommand.current = newCommand // Update last sent command
       } else {
@@ -278,15 +274,15 @@ export function Dashboard() {
       {/* Simulator Panel */}
       {simulationRunning && (
         <div className="simulator-panel">
-          <iframe src="http://127.0.0.1:8002/index.html" loading="lazy" />
+          <iframe src="http://127.0.0.1:8002/index.html" />
         </div>
       )}
       <div className="ui-panel">
         <div className="button-row">
           <ScenarioLogger
             simulatorData={{
-              position_pri: azimuthData.position_pri,
-              angle_pri: azimuthData.angle_pri
+              thrust: azimuthData.position_pri,
+              angle: azimuthData.position_sec
             }}
             configFileName={configFileName}
             thrustAdvices={thrustAdvices}
