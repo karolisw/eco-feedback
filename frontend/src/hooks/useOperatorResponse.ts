@@ -25,8 +25,7 @@ export function useOperatorResponse({
     if (!simulationRunning || alertTime === null || alertHandledRef.current)
       return
 
-    const hasResponded =
-      thrust !== thrustSetpoint || angle !== angleSetpoint
+    const hasResponded = thrust !== thrustSetpoint || angle !== angleSetpoint
 
     if (hasResponded) {
       alertHandledRef.current = true

@@ -27,10 +27,7 @@ export function useFrictionFeedback({
   useEffect(() => {
     if (thrust === undefined || angle === undefined) return
 
-    const {
-      inThrustAdvice,
-      inAngleAdvice
-    } = getAdviceZoneStatus({
+    const { inThrustAdvice, inAngleAdvice } = getAdviceZoneStatus({
       thrust,
       angle,
       angleAdvices,

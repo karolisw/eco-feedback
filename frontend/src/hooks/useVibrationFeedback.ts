@@ -1,5 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { AdviceType, AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import {
+  AdviceType,
+  AngleAdvice
+} from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AlertConfig } from '../types/AlertConfig'
 
@@ -46,14 +49,20 @@ export function useVibrationFeedback({
         angle <= advice.maxAngle &&
         advice.type === AdviceType.caution
       ) {
-        type =  AdviceType.caution
+        type = AdviceType.caution
         strength = Math.max(strength, alertConfig.vibrationStrengthAngle ?? 1)
       }
     }
 
     return [strength, type]
-  }, [thrustAdvices, angleAdvices, thrust, angle, alertConfig.vibrationStrengthThruster, alertConfig.vibrationStrengthAngle])
-
+  }, [
+    thrustAdvices,
+    angleAdvices,
+    thrust,
+    angle,
+    alertConfig.vibrationStrengthThruster,
+    alertConfig.vibrationStrengthAngle
+  ])
 
   useEffect(() => {
     if (thrust === undefined || angle === undefined) return
@@ -73,7 +82,8 @@ export function useVibrationFeedback({
       }
     }
   }, [
-    thrust,angle,
+    thrust,
+    angle,
     getVibrationStrength,
     sendToBackend,
     alertConfig.enableVibration

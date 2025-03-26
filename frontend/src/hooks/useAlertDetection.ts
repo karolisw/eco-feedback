@@ -47,5 +47,12 @@ export function useAlertDetection({
       alertTriggeredRef.current = true
       onAlertDetected(detectedType, Date.now())
     }
-  }, [angle, thrust, angleAdvices, thrustAdvices, simulationRunning, onAlertDetected])
+  }, [
+    angle,
+    thrust,
+    angleAdvices,
+    thrustAdvices,
+    simulationRunning,
+    onAlertDetected
+  ])
 }

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { AdviceType, AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
+import {
+  AdviceType,
+  AngleAdvice
+} from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AlertConfig } from '../types/AlertConfig'
 
@@ -21,7 +24,7 @@ export function useDetentFeedback({
   useEffect(() => {
     if (
       !alertConfig.enableDetents ||
-      detentsSentRef.current 
+      detentsSentRef.current
       //thrust === 0 //TODO why would we check for 0?
     )
       return
@@ -53,10 +56,5 @@ export function useDetentFeedback({
     }
 
     detentsSentRef.current = true
-  }, [
-    angleAdvices,
-    thrustAdvices,
-    alertConfig.enableDetents,
-    sendToBackend
-  ])
+  }, [angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend])
 }
