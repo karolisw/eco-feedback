@@ -11,9 +11,7 @@ import { DashboardData } from '../types/DashboardData'
 export function MiniDashboard() {
   const initialData: DashboardData = {
     position_pri: 0,
-    angle_pri: 0,
     position_sec: 0,
-    angle_sec: 0,
     pos_setpoint_pri: 0,
     pos_setpoint_sec: 0
   }
@@ -26,10 +24,9 @@ export function MiniDashboard() {
         <TabPanel>
           <MemoizedAzimuthThruster
             thrust={data.data.position_pri}
-            angle={data.data.angle_pri}
+            angle={data.data.position_sec}
             angleSetpoint={0}
             thrustSetPoint={0}
-            onSetPointChange={() => {}} // Dummy function
             touching={true}
             atThrustSetpoint={false}
             atAngleSetpoint={false}
@@ -38,7 +35,7 @@ export function MiniDashboard() {
           />
         </TabPanel>
         <TabPanel>
-          <MemoizedRudder angle={data.data.angle_pri} />
+          <MemoizedRudder angle={data.data.position_sec} />
         </TabPanel>
         <TabPanel>
           <MemoizedThruster thrust={data.data.position_pri} />
