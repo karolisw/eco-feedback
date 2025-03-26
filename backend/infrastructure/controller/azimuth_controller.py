@@ -344,11 +344,8 @@ class AzimuthController:
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""
-        #return self.latest_data.copy()
-        #logger.info(f"Latest data: {self.latest_data}")
         return self.latest_data.copy()
-        #with self.lock:
-         #   return self.latest_data.copy() 
+
 
     async def update_data(self, interval=0.1):
         """Continuously fetches data every 'interval' seconds."""
