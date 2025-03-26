@@ -81,6 +81,18 @@ export function Dashboard() {
     initialData
   )
 
+  // Memoized Component to prevent unnecessary re-renders
+  const MemoizedAzimuthThruster = memo(AzimuthThruster)
+  const MemoizedCompass = memo(Compass)
+  const thrustValue = useMemo(
+    () => azimuthData.position_pri,
+    [azimuthData.position_pri]
+  )
+  const angleValue = useMemo(
+    () => azimuthData.position_sec,
+    [azimuthData.position_sec]
+  )
+
   // Alert zones
   const location = useLocation()
   const state = location.state as LocationState | null // Type casting for safety
@@ -362,8 +374,8 @@ export function Dashboard() {
           </div>
           <div className="instrument-panel-row">
             <MemoizedAzimuthThruster
-              thrust={azimuthData.position_pri}
-              angle={negativeAngleToRealAngle(azimuthData.position_sec)}
+              thrust={thrustValue}
+              angle={negativeAngleToRealAngle(angleValue)}
               thrustSetPoint={thrustSetpoint}
               angleSetpoint={angleSetpoint}
               touching={true}
@@ -474,7 +486,3 @@ export function Dashboard() {
     </div>
   )
 }
-
-// Memoized Component to prevent unnecessary re-renders
-const MemoizedAzimuthThruster = memo(AzimuthThruster)
-const MemoizedCompass = memo(Compass)
