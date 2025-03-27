@@ -301,6 +301,8 @@ class AzimuthController:
         strength_angle_hreg = 200
         
         try:
+            # Enable detent everytime just in case
+            await self.client.write_coil(address=1, value=True, slave=self.slave_id)
             if (type == "thrust"):
                 logger.info("Trying to set detents for thruster")
                 # The positioning of the detents
@@ -353,6 +355,8 @@ class AzimuthController:
             angle_boundary_strength = 202
             
             try:
+                await self.client.write_coil(address=enable_boundary_reg, value=enable, slave=self.slave_id)
+
                 if (type == "thrust"):
                     logger.info("Trying to set boundary for thruster")
                     
@@ -380,7 +384,7 @@ class AzimuthController:
                 return False
         else:
             try:
-                await self.client.write_coil(address=enable_boundary_reg, value=False, slave=self.slave_id)
+                await self.client.write_coil(address=enable_boundary_reg, value=enable, slave=self.slave_id)
                 logger.info(f"Disabled boundary at register {enable_boundary_reg}")
                 return True
             except ModbusIOException as e:
