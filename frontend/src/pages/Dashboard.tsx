@@ -13,6 +13,7 @@ import '../styles/dashboard.css'
 import '../styles/instruments.css'
 import { DashboardData, SimulatorData } from '../types/DashboardData'
 import { AlertConfig } from '../types/AlertConfig'
+import { BoundaryConfig } from '../types/BoundaryConfig'
 import {
   toHeading,
   gramsToKiloGrams,
@@ -27,6 +28,7 @@ import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
 import { useDetentFeedback } from '../hooks/useDetentFeedback'
 import { useAlertDetection } from '../hooks/useAlertDetection'
 import { useOperatorResponse } from '../hooks/useOperatorResponse'
+import { useBoundaryFeedback } from '../hooks/useBoundaryFeedback'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -92,6 +94,23 @@ export function Dashboard() {
     () => azimuthData.position_sec,
     [azimuthData.position_sec]
   )
+
+  const boundaryConfig: BoundaryConfig[] = [
+    {
+      enabled: true,
+      boundary: 2,
+      type: 'thrust',
+      lower: 20,
+      upper: 40
+    },
+    {
+      enabled: true,
+      boundary: 3,
+      type: 'angle',
+      lower: -40,
+      upper: 40
+    }
+  ]
 
   // Alert zones
   const location = useLocation()
@@ -220,6 +239,11 @@ export function Dashboard() {
     angleAdvices,
     thrustAdvices,
     alertConfig,
+    sendToBackend
+  })
+
+  useBoundaryFeedback({
+    config: boundaryConfig,
     sendToBackend
   })
 
