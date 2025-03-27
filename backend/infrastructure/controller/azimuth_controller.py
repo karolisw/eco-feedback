@@ -324,7 +324,71 @@ class AzimuthController:
                 return True
         except ModbusIOException as e:
             logger.error(f"[ERROR] Modbus IO Exception while writing detent: {e}")
-            return False    
+            return False 
+        
+    async def set_boundary(self, enable:bool, boundary: int, type: int, lower: int, upper: int):
+        """
+        Writes the boundary value to the Modbus register.
+
+        :param boundary_value: The boundary value to set (0 - 3).
+        :param type: The type of boundary to set ("angle", "thrust").
+        :param position1: The first position of the boundary to set (0-100 or 0-359).
+        :param position2: The second position of the boundary to set (0-100 or 0-359).
+        """
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set boundary.")
+            return False
+        
+        enable_boundary_reg = 3
+
+        if enable:
+        
+            thrust_boundary_lower = 130
+            thrust_boundary_upper = 131
+            
+            angle_boundary_lower = 230
+            angle_boundary_upper = 231
+            
+            thrust_boundary_strength = 102
+            angle_boundary_strength = 202
+            
+            try:
+                if (type == "thrust"):
+                    logger.info("Trying to set boundary for thruster")
+                    
+                    # The positioning of the boundary
+                    await self.client.write_register(address=thrust_boundary_lower, value=lower, slave=self.slave_id)
+                    await self.client.write_register(address=thrust_boundary_upper, value=upper, slave=self.slave_id)
+                    logger.info(f"Boundary has been set for thruster with address: {thrust_boundary_lower} and {thrust_boundary_upper}")
+                    logger.info(f"and value: {lower} and {upper}")
+
+                    # The strength of the boundary
+                    await self.client.write_register(address=thrust_boundary_strength, value=boundary, slave=self.slave_id)
+                    
+                    logger.info(f" Set thrust boundary strength to {boundary} at register {thrust_boundary_strength}")
+                    return True
+                if (type == "angle"):
+                    # The positioning of the boundary
+                    await self.client.write_register(address=angle_boundary_lower, value=lower, slave=self.slave_id)
+                    await self.client.write_register(address=angle_boundary_upper, value=upper, slave=self.slave_id)
+                    logger.info(f"Boundary has been set for angle with address: {angle_boundary_lower} and {angle_boundary_upper}")
+                    logger.info(f"and value: {lower} and {upper}")
+                    # The strength of the boundary
+                    await self  
+            except ModbusIOException as e:
+                logger.error(f"[ERROR] Modbus IO Exception while writing boundary: {e}")
+                return False
+        else:
+            try:
+                await self.client.write_coil(address=enable_boundary_reg, value=False, slave=self.slave_id)
+                logger.info(f"Disabled boundary at register {enable_boundary_reg}")
+                return True
+            except ModbusIOException as e:
+                logger.error(f"[ERROR] Modbus IO Exception while writing boundary: {e}")
+                return False
+            except Exception as e:
+                logger.error(f"[ERROR] Unexpected error while writing boundary: {e}")
+                return False 
         
     async def set_friction_strength(self, friction: int):
         """
@@ -351,6 +415,8 @@ class AzimuthController:
         except Exception as e:
             print(f"[ERROR] Unexpected error while writing friction: {e}")
             return False
+        
+        
 
     async def get_latest_data(self):
         """Provide the latest register data for external use."""
