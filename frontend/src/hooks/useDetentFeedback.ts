@@ -7,6 +7,8 @@ import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-inst
 import { AlertConfig } from '../types/AlertConfig'
 
 type UseDetentFeedbackProps = {
+  thrust: number
+  angle: number
   angleAdvices: AngleAdvice[]
   thrustAdvices: LinearAdvice[]
   alertConfig: AlertConfig
@@ -14,6 +16,8 @@ type UseDetentFeedbackProps = {
 }
 
 export function useDetentFeedback({
+  thrust,
+  angle,
   angleAdvices,
   thrustAdvices,
   alertConfig,
@@ -23,8 +27,8 @@ export function useDetentFeedback({
 
   useEffect(() => {
     if (
-      !alertConfig.enableDetents ||
-      detentsSentRef.current
+      (!alertConfig.enableDetents ||
+      detentsSentRef.current) && thrust != 0 && angle != 0 
       //thrust === 0 //TODO why would we check for 0?
     )
       return
@@ -33,6 +37,8 @@ export function useDetentFeedback({
     for (const advice of angleAdvices) {
       if (advice.type === AdviceType.advice) {
         const center = (advice.minAngle + advice.maxAngle) / 2
+        console.log('Setting detent at', center)
+        console.log("for angle")
         sendToBackend({
           command: 'set_detent',
           type: 'angle',
@@ -46,6 +52,8 @@ export function useDetentFeedback({
     for (const advice of thrustAdvices) {
       if (advice.type === AdviceType.advice) {
         const center = (advice.min + advice.max) / 2
+        console.log('Setting detent at', center)
+        console.log("for thrust")
         sendToBackend({
           command: 'set_detent',
           type: 'thrust',
@@ -56,5 +64,5 @@ export function useDetentFeedback({
     }
 
     detentsSentRef.current = true
-  }, [angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend])
+  }, [thrust, angle, angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend])
 }

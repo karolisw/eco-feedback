@@ -212,6 +212,8 @@ export function Dashboard() {
 
   // Use custom hook to handle detent feedback
   useDetentFeedback({
+    thrust,
+    angle,
     angleAdvices,
     thrustAdvices,
     alertConfig,
