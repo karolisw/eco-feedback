@@ -101,6 +101,21 @@ class Dashboard:
                     logger.info("Friction strength successfully updated.")
                 else:
                     logger.error("Failed to update friction strength.")
+                    
+            # Handle boundary updates
+            if data.get("command") == "set_boundary":
+                logger.info("Boundary update request received.")
+                enable = data.get("enable",False)
+                boundary = data.get("boundary", 0)
+                type = data.get("type", 0)
+                lower = data.get("lower", 0)
+                upper = data.get("upper", 0)
+
+                success = await self.controller.set_boundary(enable, boundary, type, lower, upper)
+                if success:
+                    logger.info("Boundary successfully updated.")
+                else:
+                    logger.error("Failed to update boundary.")
 
             # Handle stop simulation command
             if data.get("command") == "stop_simulation":
