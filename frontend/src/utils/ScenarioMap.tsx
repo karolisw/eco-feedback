@@ -4,12 +4,14 @@ import {
   AdviceType
 } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
+import { BoundaryConfig } from '../types/BoundaryConfig'
 
 export const scenarioAdviceMap: Record<
   ScenarioKey,
   {
     angleAdvices: AngleAdvice[]
     thrustAdvices: LinearAdvice[]
+    boundaries?: BoundaryConfig[]
   }
 > = {
   // This scenario only focuses on thruster feedback
@@ -19,26 +21,25 @@ export const scenarioAdviceMap: Record<
   'maintain-speed': {
     angleAdvices: [],
     thrustAdvices: [
-      { min: 10, max: 40, type: AdviceType.advice, hinted: true },
-      { min: 41, max: 100, type: AdviceType.caution, hinted: true }
+      { min: 20, max: 50, type: AdviceType.advice, hinted: true },
+      { min: 60, max: 100, type: AdviceType.caution, hinted: true }
     ]
   },
   // The operator should turn the vessel around, but they should not turn around too quickly
   'turn-around': {
     angleAdvices: [
-      { minAngle: -40, maxAngle: -1, type: AdviceType.advice, hinted: true },
+      { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: -41, maxAngle: -179, type: AdviceType.caution, hinted: true },
-      { minAngle: 180, maxAngle: 41, type: AdviceType.caution, hinted: true }
+      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [{ min: 10, max: 30, type: AdviceType.advice, hinted: true }]
   },
   // The operator should aim to hit the buoys
   'navigate-buoys': {
     angleAdvices: [
-      { minAngle: -40, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 60, maxAngle: 180, type: AdviceType.caution, hinted: true },
-      { minAngle: -180, maxAngle: -60, type: AdviceType.caution, hinted: true }
+      { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
+      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
+      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [
       { min: 20, max: 60, type: AdviceType.advice, hinted: true },
@@ -50,13 +51,22 @@ export const scenarioAdviceMap: Record<
   // Due to the speed limit, boundaries should be set at 4 knots
   'depart-harbor': {
     angleAdvices: [
-      { minAngle: -40, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 60, maxAngle: 180, type: AdviceType.caution, hinted: true },
-      { minAngle: -180, maxAngle: -60, type: AdviceType.caution, hinted: true }
+      { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
+      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
+      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [
       { min: 0, max: 40, type: AdviceType.advice, hinted: true },
-      { min: 41, max: 100, type: AdviceType.caution, hinted: true }
+      { min: 50, max: 100, type: AdviceType.caution, hinted: true }
+    ],
+    boundaries: [
+      {
+        enabled: true,
+        boundary: 3,
+        type: 'thrust',
+        lower: 0,
+        upper: 41
+      }
     ]
   }
 }
