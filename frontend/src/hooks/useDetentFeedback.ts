@@ -12,6 +12,8 @@ type UseDetentFeedbackProps = {
   angleAdvices: AngleAdvice[]
   thrustAdvices: LinearAdvice[]
   alertConfig: AlertConfig
+  scenarioKey: string
+
   sendToBackend: (data: unknown) => void
 }
 
@@ -21,48 +23,59 @@ export function useDetentFeedback({
   angleAdvices,
   thrustAdvices,
   alertConfig,
+  scenarioKey,
   sendToBackend
 }: UseDetentFeedbackProps) {
   const detentsSentRef = useRef(false)
 
-  useEffect(() => {
-    if (
-      (!alertConfig.enableDetents ||
-      detentsSentRef.current) && thrust != 0 && angle != 0 
-      //thrust === 0 //TODO why would we check for 0?
-    )
-      return
+  // Reset detentsSentRef when advices change
+  useEffect(() => { 
+    console.log("advices changed -> resetting detentsSentRef")
+    detentsSentRef.current = false
+  }, [angleAdvices, thrustAdvices, scenarioKey]) 
 
-    // ANGLE ADVICE: center-based detent
+  useEffect(() => {
+    if (!alertConfig.enableDetents) return
+    if (detentsSentRef.current) return
+    
+    const angleReady = angle != null && !isNaN(angle)
+    const thrustReady = thrust != null && !isNaN(thrust)
+    const hasAdviceZones = angleAdvices.length > 0 || thrustAdvices.length > 0
+    
+    if (!(angleReady || thrustReady)) return
+    if (!hasAdviceZones) return
+
+
+    // Set detents for angle-based advice zones
     for (const advice of angleAdvices) {
       if (advice.type === AdviceType.advice) {
-        const center = (advice.minAngle + advice.maxAngle) / 2
-        console.log('Setting detent at', center)
-        console.log("for angle")
+        const pos = Math.round((advice.minAngle + advice.maxAngle) / 2)
+        console.log('[Detent] Setting ANGLE detent at', pos)
         sendToBackend({
           command: 'set_detent',
           type: 'angle',
-          pos: center,
+          pos,
           detent: 1
         })
       }
     }
 
-    // THRUST ADVICE: center-based detent
+    // Set detents for thrust-based advice zones
     for (const advice of thrustAdvices) {
       if (advice.type === AdviceType.advice) {
-        const center = (advice.min + advice.max) / 2
-        console.log('Setting detent at', center)
-        console.log("for thrust")
+        const pos = Math.round((advice.min + advice.max) / 2)
+        console.log('[Detent] Setting THRUST detent at', pos)
         sendToBackend({
           command: 'set_detent',
           type: 'thrust',
-          pos: center,
+          pos,
           detent: 1
         })
+        console.log('[Detent] WebSocket send attempted.')
       }
     }
-
     detentsSentRef.current = true
+
+
   }, [thrust, angle, angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend])
 }
