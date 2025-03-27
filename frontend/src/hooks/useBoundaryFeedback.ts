@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { BoundaryConfig } from '../types/BoundaryConfig'
 
 
@@ -9,7 +9,12 @@ interface UseBoundaryFeedbackProps {
 }
 
 export function useBoundaryFeedback({ config, sendToBackend }: UseBoundaryFeedbackProps) {
+    const sentRef = useRef<string>('')
+
   useEffect(() => {
+    const serialized = JSON.stringify(config)
+    if (sentRef.current === serialized) return // skip repeat sends of the same boundaries
+
     if (!config || config.length === 0) return
 
     config.forEach((boundary) => {
@@ -25,5 +30,7 @@ export function useBoundaryFeedback({ config, sendToBackend }: UseBoundaryFeedba
       console.log('[Boundary] Sending boundary update:', command)
       sendToBackend(command)
     })
+    sentRef.current = serialized
+
   }, [config, sendToBackend])
 }
