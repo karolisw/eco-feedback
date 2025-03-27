@@ -14,6 +14,8 @@ import '../styles/instruments.css'
 import { DashboardData, SimulatorData } from '../types/DashboardData'
 import { AlertConfig } from '../types/AlertConfig'
 import { BoundaryConfig } from '../types/BoundaryConfig'
+import { ScenarioControlPanel } from '../components/controlPanel/ScenarioControlPanel'
+
 import {
   toHeading,
   gramsToKiloGrams,
@@ -29,6 +31,8 @@ import { useDetentFeedback } from '../hooks/useDetentFeedback'
 import { useAlertDetection } from '../hooks/useAlertDetection'
 import { useOperatorResponse } from '../hooks/useOperatorResponse'
 import { useBoundaryFeedback } from '../hooks/useBoundaryFeedback'
+import { ScenarioKey } from '../constants/scenarioOptions'
+import { scenarioAdviceMap } from '../utils/ScenarioMap'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -46,6 +50,17 @@ export function Dashboard() {
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const [showAzimuth, setShowAzimuth] = useState(true)
+  const [boundaryConfig, setBoundaryConfig] = useState<BoundaryConfig[]>([])
+  const [currentTask, setCurrentTask] = useState<number>(1)
+
+  const [selectedScenario, setSelectedScenario] =
+    useState<ScenarioKey>('maintain-speed')
+  const [angleAdvices, setAngleAdvices] = useState<AngleAdvice[]>(
+    scenarioAdviceMap['maintain-speed'].angleAdvices
+  )
+  const [thrustAdvices, setThrustAdvices] = useState<LinearAdvice[]>(
+    scenarioAdviceMap['maintain-speed'].thrustAdvices
+  )
 
   const navigate = useNavigate()
 
@@ -95,49 +110,11 @@ export function Dashboard() {
     [azimuthData.position_sec]
   )
 
-  const boundaryConfig: BoundaryConfig[] = [
-    {
-      enabled: true,
-      boundary: 2,
-      type: 'thrust',
-      lower: 20,
-      upper: 40
-    },
-    {
-      enabled: true,
-      boundary: 3,
-      type: 'angle',
-      lower: -40,
-      upper: 40
-    }
-  ]
-
   // Alert zones
   const location = useLocation()
   const state = location.state as LocationState | null // Type casting for safety
 
   const configFileName = state?.selectedConfig ?? 'unknown'
-
-  // Fetch advices from location state (set in startup page) or use default values
-  const angleAdvices: AngleAdvice[] = useMemo(
-    () =>
-      state?.angleAdvices ??
-      ([
-        { minAngle: 20, maxAngle: 50, type: 'advice', hinted: true },
-        { minAngle: 75, maxAngle: 100, type: 'caution', hinted: true }
-      ] as AngleAdvice[]),
-    [state?.angleAdvices]
-  )
-
-  const thrustAdvices: LinearAdvice[] = useMemo(
-    () =>
-      state?.thrustAdvices ??
-      ([
-        { min: 20, max: 50, type: 'advice', hinted: true },
-        { min: 60, max: 100, type: 'caution', hinted: true }
-      ] as LinearAdvice[]),
-    [state?.thrustAdvices]
-  )
 
   const alertConfig: AlertConfig = useMemo(
     () =>
@@ -151,6 +128,16 @@ export function Dashboard() {
       } as AlertConfig),
     [state?.alertConfig]
   )
+
+  useEffect(() => {
+    const config = scenarioAdviceMap[selectedScenario]
+    setAngleAdvices(config.angleAdvices)
+    setThrustAdvices(config.thrustAdvices)
+    if (config.boundaries) {
+      setBoundaryConfig(config.boundaries) // local state for useBoundaryFeedback
+    }
+    setCurrentTask(1) // Reset task when switching scenario
+  }, [selectedScenario])
 
   useEffect(() => {
     if (azimuthData) {
@@ -176,7 +163,6 @@ export function Dashboard() {
         lastSentCommand.current.thrust !== newCommand.thrust ||
         lastSentCommand.current.angle !== newCommand.angle
       ) {
-        console.log('sending this to simulator: ', newCommand)
         sendToSimulator(JSON.stringify(newCommand))
         lastSentCommand.current = newCommand // Update last sent command
       } else {
@@ -239,7 +225,8 @@ export function Dashboard() {
     angleAdvices,
     thrustAdvices,
     alertConfig,
-    sendToBackend
+    sendToBackend,
+    scenarioKey: selectedScenario
   })
 
   useBoundaryFeedback({
@@ -300,7 +287,20 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
-      <TaskInstruction scenario={1} taskNumber={1} />
+      <TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />
+      <ScenarioControlPanel
+        selectedScenario={selectedScenario}
+        onScenarioChange={setSelectedScenario}
+        currentTask={currentTask}
+        onTaskChange={setCurrentTask}
+        onReset={() => {
+          setCurrentTask(1)
+          console.log(
+            'Reset pressed. (You can also stop/restart simulation here)'
+          )
+        }}
+      />
+
       {/* Simulator Panel */}
       {simulationRunning && (
         <div className="simulator-panel">
