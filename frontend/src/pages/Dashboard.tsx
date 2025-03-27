@@ -43,6 +43,8 @@ export function Dashboard() {
   const [rpmData, setRpmData] = useState<number[]>([])
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
+  const [showAzimuth, setShowAzimuth] = useState(true)
+
   const navigate = useNavigate()
 
   // Keep track of last sent command
@@ -282,75 +284,81 @@ export function Dashboard() {
         </div>
       )}
       <div className="ui-panel">
-        <div className="button-row">
-          <ScenarioLogger
-            simulatorData={{
-              thrust: azimuthData.position_pri,
-              angle: azimuthData.position_sec
-            }}
-            configFileName={configFileName}
-            thrustAdvices={thrustAdvices}
-            angleAdvices={angleAdvices}
-            simulationRunning={simulationRunning}
-          />
-          <button
-            onClick={stopSimulation}
-            className="stop-button"
-            disabled={!simulationRunning}
-          >
-            Stop Simulation
+        <div style={{ margin: '10px 10px' }}>
+          <button onClick={() => setShowAzimuth((prev) => !prev)}>
+            {showAzimuth ? 'Hide' : 'Reveal'}
           </button>
-        </div>
-        <h3>Propulsion</h3>
-        <div className="intrument-panel-col">
-          <div className="instrument-panel-row">
-            <InstrumentField
-              value={azimuthData.position_pri}
-              tag="Power"
-              unit="%"
-              source="Azimuth"
-              fractionDigits={1}
-              maxDigits={4}
-              hasSource={true}
-            ></InstrumentField>
-            <InstrumentField
-              value={negativeAngleToRealAngle(azimuthData.position_sec)}
-              degree={true}
-              tag="Angle"
-              unit="°"
-              source="Azimuth"
-              fractionDigits={1}
-              maxDigits={4}
-              hasSource={true}
-            ></InstrumentField>
-            <InstrumentField
-              value={simulatorData.rpm}
-              tag="RPM"
-              maxDigits={4}
-              source="Simulator"
-              hasSource={true}
-            ></InstrumentField>
-            <InstrumentField
-              value={simulatorData.speed}
-              tag="Speed"
-              unit="kn"
-              source="Simulator"
-              fractionDigits={1}
-              hasSource={true}
-            />
-          </div>
-          <div className="instrument-panel-row">
-            <MemoizedAzimuthThruster
-              thrust={thrust}
-              angle={negativeAngleToRealAngle(angle)}
-              thrustSetPoint={thrustSetpoint}
-              angleSetpoint={angleSetpoint}
-              touching={true}
-              atThrustSetpoint={false}
-              atAngleSetpoint={false}
-              angleAdvices={angleAdvices}
+          <div className="button-row">
+            <ScenarioLogger
+              simulatorData={{
+                thrust: azimuthData.position_pri,
+                angle: azimuthData.position_sec
+              }}
+              configFileName={configFileName}
               thrustAdvices={thrustAdvices}
+              angleAdvices={angleAdvices}
+              simulationRunning={simulationRunning}
             />
+            <button
+              onClick={stopSimulation}
+              className="stop-button"
+              disabled={!simulationRunning}
+            >
+              Stop Simulation
+            </button>
+          </div>
+          <h3>Propulsion</h3>
+          <div className="intrument-panel-col">
+            <div className="instrument-panel-row">
+              <InstrumentField
+                value={azimuthData.position_pri}
+                tag="Power"
+                unit="%"
+                source="Azimuth"
+                fractionDigits={1}
+                maxDigits={4}
+                hasSource={true}
+              ></InstrumentField>
+              <InstrumentField
+                value={negativeAngleToRealAngle(azimuthData.position_sec)}
+                degree={true}
+                tag="Angle"
+                unit="°"
+                source="Azimuth"
+                fractionDigits={1}
+                maxDigits={4}
+                hasSource={true}
+              ></InstrumentField>
+              <InstrumentField
+                value={simulatorData.rpm}
+                tag="RPM"
+                maxDigits={4}
+                source="Simulator"
+                hasSource={true}
+              ></InstrumentField>
+              <InstrumentField
+                value={simulatorData.speed}
+                tag="Speed"
+                unit="kn"
+                source="Simulator"
+                fractionDigits={1}
+                hasSource={true}
+              />
+            </div>
+            <div className="instrument-panel-row"></div>
+            {showAzimuth && (
+              <MemoizedAzimuthThruster
+                thrust={thrust}
+                angle={negativeAngleToRealAngle(angle)}
+                thrustSetPoint={thrustSetpoint}
+                angleSetpoint={angleSetpoint}
+                touching={true}
+                atThrustSetpoint={false}
+                atAngleSetpoint={false}
+                angleAdvices={angleAdvices}
+                thrustAdvices={thrustAdvices}
+              />
+            )}
           </div>
           <div className="instrument-panel-row">
             <SetpointSliders
