@@ -4,6 +4,7 @@ import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
+import { TaskInstruction } from '../components/TaskInstruction'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { memo, useEffect, useRef, useState, useMemo } from 'react'
@@ -273,6 +274,7 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      <TaskInstruction scenario={1} taskNumber={1} />
       {/* Simulator Panel */}
       {simulationRunning && (
         <div className="simulator-panel">
