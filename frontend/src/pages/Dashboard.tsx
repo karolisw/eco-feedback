@@ -359,6 +359,7 @@ export function Dashboard() {
           logData={logData}
           setLogData={setLogData}
           isLogging={isLogging}
+          selectedScenario={selectedScenario}
         />
         {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
 

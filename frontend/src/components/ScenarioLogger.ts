@@ -11,6 +11,7 @@ interface ScenarioLoggerProps {
   logData: LogEntry[]
   setLogData: (updater: (prev: LogEntry[]) => LogEntry[]) => void
   configFileName: string
+  selectedScenario: string
   thrustAdvices: {
     min: number
     max: number
@@ -30,7 +31,8 @@ export function ScenarioLogger({
   setLogData,
   configFileName,
   thrustAdvices,
-  angleAdvices
+  angleAdvices,
+  selectedScenario
 }: ScenarioLoggerProps) {
   const lastAlertTime = useRef<{ thrust: number | null; angle: number | null }>(
     {
@@ -148,7 +150,8 @@ export function ScenarioLogger({
           reactionTime,
           exitTime,
           alertType: alertTypeRef.current.thrust,
-          alertCategory: 'thrust'
+          alertCategory: 'thrust',
+          scenario: selectedScenario
         }
       ])
 
@@ -178,7 +181,8 @@ export function ScenarioLogger({
           reactionTime,
           exitTime,
           alertType: alertTypeRef.current.angle,
-          alertCategory: 'angle'
+          alertCategory: 'angle',
+          scenario: selectedScenario
         }
       ])
 
