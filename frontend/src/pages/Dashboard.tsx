@@ -136,15 +136,30 @@ export function Dashboard() {
     [state?.alertConfig]
   )
 
+  const previousScenario = useRef<ScenarioKey | null>(null)
+
   useEffect(() => {
+    if (previousScenario.current === selectedScenario) {
+      console.log(
+        `[Scenario] No change in scenario, skipping `,
+        selectedScenario
+      )
+      return
+    }
+
+    previousScenario.current = selectedScenario
+
+    console.log(`[Scenario] Switched to ${selectedScenario}, clearing haptics`)
+    sendToBackend({ command: 'clear_haptics' })
+
     const config = scenarioAdviceMap[selectedScenario]
     setAngleAdvices(config.angleAdvices)
     setThrustAdvices(config.thrustAdvices)
     if (config.boundaries) {
-      setBoundaryConfig(config.boundaries) // local state for useBoundaryFeedback
+      setBoundaryConfig(config.boundaries)
     }
-    setCurrentTask(1) // Reset task when switching scenario
-  }, [selectedScenario])
+    setCurrentTask(1)
+  }, [selectedScenario, sendToBackend])
 
   useEffect(() => {
     if (azimuthData) {
