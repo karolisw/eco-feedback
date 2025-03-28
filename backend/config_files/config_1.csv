@@ -12,9 +12,9 @@ Functions And Sensors,POSITION SETPOINT,HREG,x04,,,INT,X,X,X,0,-180.0,180.0,% o 
 Functions And Sensors,DEPRICATED MODBUS BAUD 1,HREG,x05,,,UINT,X,,,38400,0.0,65536.0,baud,X,,,1
 Functions And Sensors,DEPRICATED MODBUS SLAVE 1,HREG,x06,,,UINT,X,,,1,0.0,247.0,,X,,,1
 Functions And Sensors,STRENGTH FRICTION,HREG,x07,,,UINT,X,X,X,3,1.0,3.0,,X,,,1
-Functions And Sensors,POSITION,IREG,x00,,X,FLOAT,,X,X,-0.26,-180.0,180.0,% or °,,,,1
-Functions And Sensors,ANGLE,IREG,x02,,X,FLOAT,,X,X,-0.249,-180.0,180.0,°,,,,1
-Functions And Sensors,SENS IN,IREG,x04,,X,FLOAT,,X,X,0.78,0.0,1.0,,,,,1
+Functions And Sensors,POSITION,IREG,x00,,X,FLOAT,,X,X,-0.179,-180.0,180.0,% or °,,,,1
+Functions And Sensors,ANGLE,IREG,x02,,X,FLOAT,,X,X,-0.161,-180.0,180.0,°,,,,1
+Functions And Sensors,SENS IN,IREG,x04,,X,FLOAT,,X,X,0.778,0.0,1.0,,,,,1
 Functions And Sensors,SENS OUT,IREG,x06,,X,FLOAT,,X,X,0.157,0.0,1.0,,,,,1
 Led Settings,SHOW ANGLE,COIL,x10,,,BOOL,X,X,X,1,,,,,,,1
 Led Settings,SHOW DETENTS,COIL,x11,,,BOOL,X,X,X,1,,,,,,,1
