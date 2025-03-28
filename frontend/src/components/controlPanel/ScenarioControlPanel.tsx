@@ -1,3 +1,4 @@
+import '../../styles/navBar.css'
 import { ScenarioKey, scenarioOptions } from '../../constants/scenarioOptions'
 
 interface ScenarioControlPanelProps {
@@ -5,7 +6,12 @@ interface ScenarioControlPanelProps {
   onScenarioChange: (scenario: ScenarioKey) => void
   currentTask: number
   onTaskChange: (taskNumber: number) => void
-  onReset?: () => void
+  showAzimuth: boolean
+  toggleAzimuth: () => void
+  onStopSimulation: () => void
+  simulationRunning: boolean
+  onToggleScenario: () => void
+  isLogging: boolean
 }
 
 export function ScenarioControlPanel({
@@ -13,25 +19,18 @@ export function ScenarioControlPanel({
   onScenarioChange,
   currentTask,
   onTaskChange,
-  onReset
+  showAzimuth,
+  toggleAzimuth,
+  onStopSimulation,
+  simulationRunning,
+  onToggleScenario,
+  isLogging
 }: ScenarioControlPanelProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '10px 0',
-        flexWrap: 'wrap'
-      }}
-    >
-      {/* Scenario Selector */}
-      <div>
-        <label htmlFor="scenario-select" style={{ marginRight: '6px' }}>
-          Scenario:
-        </label>
+    <div className="navbar">
+      <div className="navbar-left">
+        <label>Scenario</label>
         <select
-          id="scenario-select"
           value={selectedScenario}
           onChange={(e) => onScenarioChange(e.target.value as ScenarioKey)}
         >
@@ -41,15 +40,9 @@ export function ScenarioControlPanel({
             </option>
           ))}
         </select>
-      </div>
 
-      {/* Task Selector */}
-      <div>
-        <label htmlFor="task-select" style={{ marginRight: '6px' }}>
-          Task:
-        </label>
+        <label>Task</label>
         <select
-          id="task-select"
           value={currentTask}
           onChange={(e) => onTaskChange(Number(e.target.value))}
         >
@@ -57,14 +50,24 @@ export function ScenarioControlPanel({
           <option value={2}>Task 2</option>
           <option value={3}>Task 3</option>
         </select>
-      </div>
 
-      {/* Optional Reset Button */}
-      {onReset && (
-        <button onClick={onReset} style={{ padding: '4px 12px' }}>
-          Reset
+        <button className="azimuth-button" onClick={toggleAzimuth}>
+          {showAzimuth ? 'Hide Azimuth' : 'Show Azimuth'}
         </button>
-      )}
+        <button
+          onClick={onToggleScenario}
+          className={isLogging ? 'stop-button' : 'start-button'}
+        >
+          {isLogging ? 'Stop Scenario' : 'Start Scenario'}
+        </button>
+        <button
+          onClick={onStopSimulation}
+          className={simulationRunning ? 'stop-button' : 'disabled-button'}
+          disabled={!simulationRunning}
+        >
+          Stop Simulation
+        </button>
+      </div>
     </div>
   )
 }
