@@ -378,7 +378,8 @@ class AzimuthController:
                     logger.info(f"Boundary has been set for angle with address: {angle_boundary_lower} and {angle_boundary_upper}")
                     logger.info(f"and value: {lower} and {upper}")
                     # The strength of the boundary
-                    await self  
+                    await self.client.write_register(address=angle_boundary_strength, value=boundary, slave=self.slave_id)
+                    logger.info(f" Set angle boundary strength to {boundary} at register {angle_boundary_strength}")
             except ModbusIOException as e:
                 logger.error(f"[ERROR] Modbus IO Exception while writing boundary: {e}")
                 return False
@@ -420,6 +421,28 @@ class AzimuthController:
             print(f"[ERROR] Unexpected error while writing friction: {e}")
             return False
         
+        
+    async def clear_haptics(self):
+        # Between each scenario, the haptics detent and boundary should be cleared
+        # This is done by setting the enable coil to False
+        enable_detents_reg = 1
+        
+        if not self.client or not self.client.connected:
+            print("[ERROR] Not connected to Modbus. Cannot set friction.")
+            return False
+
+        try:
+            await self.set_boundary(False, 0, 0, 0, 0)
+            await self.client.write_coil(address=enable_detents_reg, value=False, slave=self.slave_id)
+            
+            logger.info(f" Disabled detents at register {enable_detents_reg}")
+            
+        except ModbusIOException as e:
+            logger.error(f"[ERROR] Modbus IO Exception while clearing haptics: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"[ERROR] Unexpected error while clearing haptics: {e}")
+            return False
         
 
     async def get_latest_data(self):
