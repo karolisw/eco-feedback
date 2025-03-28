@@ -1,0 +1,82 @@
+/* Navbar.css */
+
+.navbar {
+    max-width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2000;
+    background-color: #f8f9fb;
+    border-bottom: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar-left,
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .navbar label {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .navbar select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    min-width: 150px;
+    font-size: 14px;
+    background-color: #333;
+  }
+  
+  .navbar button {
+    padding: 6px 14px;
+    line-height: 1.2; 
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;/
+  }
+
+  
+  .azimuth-button {
+    background-color: #333;
+    color: #fff;
+  }
+  
+  .azimuth-button:hover {
+    background-color: #222;
+  }
+  
+  .start-button {
+    background-color: #0078d7;
+    color: #fff;
+  }
+  
+  .stop-button {
+    background-color: #d9534f;
+    color: #fff;
+
+  }
+  
+  .disabled-button {
+    background-color: #ccc;
+    color: #fff;
+    cursor: not-allowed;
+  }
+  
