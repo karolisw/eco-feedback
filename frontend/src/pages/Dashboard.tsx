@@ -242,7 +242,8 @@ export function Dashboard() {
     thrustAdvices,
     alertConfig,
     sendToBackend,
-    scenarioKey: selectedScenario
+    scenarioKey: selectedScenario,
+    detentEnabled: scenarioAdviceMap[selectedScenario]?.detent ?? false
   })
 
   useBoundaryFeedback({

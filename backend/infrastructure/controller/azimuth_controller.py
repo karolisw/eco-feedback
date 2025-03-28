@@ -292,17 +292,26 @@ class AzimuthController:
             return False
         
         thrust_hreg_pos1 = 140
-        #thrust_hreg_pos2 = 141
+        thrust_hreg_pos2 = 141
         
         angle_hreg_pos1 = 240
-        #angle_hreg_pos2 = 241
+        angle_hreg_pos2 = 241
         
         strength_thrust_hreg = 100
         strength_angle_hreg = 200
         
         try:
-            # Enable detent everytime just in case
+            # Enable the use of detents
             await self.client.write_coil(address=1, value=True, slave=self.slave_id)
+            
+            # Enable only these detent registers
+            await self.client.write_coil(thrust_hreg_pos1, value=True, slave=self.slave_id)
+            await self.client.write_coil(angle_hreg_pos1, value=True, slave=self.slave_id)
+            
+            # Disable the other two detent registers
+            await self.client.write_coil(thrust_hreg_pos2, value=False, slave=self.slave_id)
+            await self.client.write_coil(angle_hreg_pos2, value=False, slave=self.slave_id)
+            
             if (type == "thrust"):
                 logger.info("Trying to set detents for thruster")
                 # The positioning of the detents
@@ -433,7 +442,14 @@ class AzimuthController:
 
         try:
             await self.set_boundary(False, 0, 0, 0, 0)
+            await self.client.write_register(address=140, value=0, slave=self.slave_id)
+            await self.client.write_register(address=141, value=0, slave=self.slave_id)
+            await self.client.write_register(address=240, value=0, slave=self.slave_id)
+            await self.client.write_register(address=241, value=0, slave=self.slave_id)
             await self.client.write_coil(address=enable_detents_reg, value=False, slave=self.slave_id)
+            await self.client.write_coil(address=40, value=False, slave=self.slave_id)
+            await self.client.write_coil(address=41, value=False, slave=self.slave_id)
+
             
             logger.info(f" Disabled detents at register {enable_detents_reg}")
             

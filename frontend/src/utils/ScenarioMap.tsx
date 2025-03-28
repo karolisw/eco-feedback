@@ -9,6 +9,7 @@ import { BoundaryConfig } from '../types/BoundaryConfig'
 export const scenarioAdviceMap: Record<
   ScenarioKey,
   {
+    detent: boolean
     angleAdvices: AngleAdvice[]
     thrustAdvices: LinearAdvice[]
     boundaries?: BoundaryConfig[]
@@ -19,6 +20,7 @@ export const scenarioAdviceMap: Record<
   // Detent is at the end of the advice zone
   // Caution zone is right behind the advice zone
   'maintain-speed': {
+    detent: true,
     angleAdvices: [],
     thrustAdvices: [
       { min: 20, max: 50, type: AdviceType.advice, hinted: true },
@@ -27,6 +29,7 @@ export const scenarioAdviceMap: Record<
   },
   // The operator should turn the vessel around, but they should not turn around too quickly
   'turn-around': {
+    detent: true,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
@@ -37,6 +40,7 @@ export const scenarioAdviceMap: Record<
   },
   // The operator should aim to hit the buoys
   'navigate-buoys': {
+    detent: true,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
@@ -52,6 +56,7 @@ export const scenarioAdviceMap: Record<
   // After leaving the harbor, they should aim for 8 knots
   // Due to the speed limit, boundaries should be set at 4 knots
   'depart-harbor': {
+    detent: true,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
