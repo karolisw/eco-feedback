@@ -189,7 +189,7 @@ export function ScenarioLogger({
       lastAlertTime.current.angle = null
       firstResponseTime.current.angle = null
     }
-  }, [simulatorData, isLogging, angleAdvices, thrustAdvices, setLogData])
+  }, [simulatorData, isLogging, angleAdvices, thrustAdvices, setLogData, selectedScenario])
 
   // Export on stop
   useEffect(() => {
