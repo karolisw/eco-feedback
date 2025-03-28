@@ -139,13 +139,7 @@ export function Dashboard() {
   const previousScenario = useRef<ScenarioKey | null>(null)
 
   useEffect(() => {
-    if (previousScenario.current === selectedScenario) {
-      console.log(
-        `[Scenario] No change in scenario, skipping `,
-        selectedScenario
-      )
-      return
-    }
+    if (previousScenario.current === selectedScenario) return
 
     previousScenario.current = selectedScenario
 
@@ -359,6 +353,9 @@ export function Dashboard() {
           logData={logData}
           setLogData={setLogData}
           isLogging={isLogging}
+          selectedScenario={selectedScenario}
+          boundaryConfig={boundaryConfig}
+
         />
         {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
 

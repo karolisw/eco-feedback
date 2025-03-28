@@ -30,7 +30,8 @@ export const scenarioAdviceMap: Record<
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
+      { minAngle: 70, maxAngle: 180, type: AdviceType.caution, hinted: true },
+      { minAngle: -180, maxAngle: -70, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [{ min: 10, max: 30, type: AdviceType.advice, hinted: true }]
   },
@@ -39,7 +40,8 @@ export const scenarioAdviceMap: Record<
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
+      { minAngle: 70, maxAngle: 180, type: AdviceType.caution, hinted: true },
+      { minAngle: -180, maxAngle: -70, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [
       { min: 20, max: 60, type: AdviceType.advice, hinted: true },
@@ -64,7 +66,7 @@ export const scenarioAdviceMap: Record<
         enabled: true,
         boundary: 3,
         type: 'thrust',
-        lower: 0,
+        lower: 1,
         upper: 41
       }
     ]

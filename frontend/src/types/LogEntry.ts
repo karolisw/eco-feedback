@@ -4,6 +4,7 @@ export interface LogEntry {
     azimuthAngle: number;
     reactionTime?: number | null;
     exitTime?: number | null;
-    alertType?: 'advice' | 'caution' | null;
+    alertType?: 'advice' | 'caution' | 'boundary' | null;
     alertCategory?: 'thrust' | 'angle';
+    scenario: string;
   }

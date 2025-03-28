@@ -27,7 +27,6 @@ export function useBoundaryFeedback({ config, sendToBackend }: UseBoundaryFeedba
         upper: boundary.upper
       }
 
-      console.log('[Boundary] Sending boundary update:', command)
       sendToBackend(command)
     })
     sentRef.current = serialized
