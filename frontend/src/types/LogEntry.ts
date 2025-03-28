@@ -6,4 +6,5 @@ export interface LogEntry {
     exitTime?: number | null;
     alertType?: 'advice' | 'caution' | null;
     alertCategory?: 'thrust' | 'angle';
+    scenario: string;
   }
