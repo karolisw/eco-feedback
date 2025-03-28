@@ -4,7 +4,7 @@ import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
-import { TaskInstruction } from '../components/TaskInstruction'
+//import { TaskInstruction } from '../components/TaskInstruction'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { memo, useEffect, useRef, useState, useMemo } from 'react'
@@ -33,6 +33,9 @@ import { useOperatorResponse } from '../hooks/useOperatorResponse'
 import { useBoundaryFeedback } from '../hooks/useBoundaryFeedback'
 import { ScenarioKey } from '../constants/scenarioOptions'
 import { scenarioAdviceMap } from '../utils/ScenarioMap'
+import { LogEntry } from '../types/LogEntry'
+import Papa from 'papaparse'
+import saveAs from 'file-saver'
 
 type LocationState = {
   angleAdvices?: AngleAdvice[]
@@ -52,6 +55,10 @@ export function Dashboard() {
   const [showAzimuth, setShowAzimuth] = useState(true)
   const [boundaryConfig, setBoundaryConfig] = useState<BoundaryConfig[]>([])
   const [currentTask, setCurrentTask] = useState<number>(1)
+  const [isLogging, setIsLogging] = useState(false)
+  const [logData, setLogData] = useState<LogEntry[]>([])
+  const scenarioId = useRef<string | null>(null)
+  const scenarioCount = useRef<number>(1)
 
   const [selectedScenario, setSelectedScenario] =
     useState<ScenarioKey>('maintain-speed')
@@ -285,201 +292,219 @@ export function Dashboard() {
     })
   }
 
+  const startLogging = () => {
+    if (!simulationRunning) {
+      console.warn('Cannot start logging when simulation is not running.')
+      return
+    }
+    scenarioId.current = new Date().toISOString()
+    setLogData([])
+    setIsLogging(true)
+    console.log(`Started logging scenario ${scenarioCount.current}`)
+  }
+
+  const stopLogging = () => {
+    if (logData.length > 0 && scenarioId.current) {
+      const csv = Papa.unparse(logData)
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      saveAs(blob, `${scenarioId.current}-${configFileName}`)
+      scenarioCount.current += 1
+    }
+    setIsLogging(false)
+  }
+
+  const toggleScenario = () => {
+    if (isLogging) stopLogging()
+    else startLogging()
+  }
+
   return (
-    <div className="dashboard">
-      <TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />
+    <div>
       <ScenarioControlPanel
         selectedScenario={selectedScenario}
         onScenarioChange={setSelectedScenario}
         currentTask={currentTask}
         onTaskChange={setCurrentTask}
-        onReset={() => {
-          setCurrentTask(1)
-          console.log(
-            'Reset pressed. (You can also stop/restart simulation here)'
-          )
-        }}
+        showAzimuth={showAzimuth}
+        toggleAzimuth={() => setShowAzimuth((prev) => !prev)}
+        onStopSimulation={stopSimulation}
+        simulationRunning={simulationRunning}
+        onToggleScenario={toggleScenario}
+        isLogging={isLogging}
       />
 
-      {/* Simulator Panel */}
-      {simulationRunning && (
-        <div className="simulator-panel">
-          <iframe src="http://127.0.0.1:8002/index.html" />
-        </div>
-      )}
-      <div className="ui-panel">
-        <div style={{ margin: '10px 10px' }}>
-          <button onClick={() => setShowAzimuth((prev) => !prev)}>
-            {showAzimuth ? 'Hide' : 'Reveal'}
-          </button>
-          <div className="button-row">
-            <ScenarioLogger
-              simulatorData={{
-                thrust: azimuthData.position_pri,
-                angle: azimuthData.position_sec
-              }}
-              configFileName={configFileName}
-              thrustAdvices={thrustAdvices}
-              angleAdvices={angleAdvices}
-              simulationRunning={simulationRunning}
-            />
-            <button
-              onClick={stopSimulation}
-              className="stop-button"
-              disabled={!simulationRunning}
-            >
-              Stop Simulation
-            </button>
+      <div className="dashboard">
+        {/* Logical-only logger (no UI) */}
+        <ScenarioLogger
+          simulatorData={{ thrust, angle }}
+          simulationRunning={simulationRunning}
+          thrustAdvices={thrustAdvices}
+          angleAdvices={angleAdvices}
+          configFileName={configFileName}
+          logData={logData}
+          setLogData={setLogData}
+          isLogging={isLogging}
+        />
+        {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
+
+        {/* Simulator Panel */}
+        {simulationRunning && (
+          <div className="simulator-panel">
+            <iframe src="http://127.0.0.1:8002/index.html" />
           </div>
-          <h3>Propulsion</h3>
-          <div className="intrument-panel-col">
+        )}
+        <div className="ui-panel">
+          <div style={{ margin: '10px 10px' }}>
+            <h3>Propulsion</h3>
+            <div className="intrument-panel-col">
+              <div className="instrument-panel-row">
+                <InstrumentField
+                  value={azimuthData.position_pri}
+                  tag="Power"
+                  unit="%"
+                  source="Azimuth"
+                  fractionDigits={1}
+                  maxDigits={4}
+                  hasSource={true}
+                ></InstrumentField>
+                <InstrumentField
+                  value={negativeAngleToRealAngle(azimuthData.position_sec)}
+                  degree={true}
+                  tag="Angle"
+                  unit="°"
+                  source="Azimuth"
+                  fractionDigits={1}
+                  maxDigits={4}
+                  hasSource={true}
+                ></InstrumentField>
+                <InstrumentField
+                  value={simulatorData.rpm}
+                  tag="RPM"
+                  maxDigits={4}
+                  source="Simulator"
+                  hasSource={true}
+                ></InstrumentField>
+                <InstrumentField
+                  value={simulatorData.speed}
+                  tag="Speed"
+                  unit="kn"
+                  source="Simulator"
+                  fractionDigits={1}
+                  hasSource={true}
+                />
+              </div>
+              <div className="instrument-panel-row"></div>
+              {showAzimuth && (
+                <MemoizedAzimuthThruster
+                  thrust={thrust}
+                  angle={negativeAngleToRealAngle(angle)}
+                  thrustSetPoint={thrustSetpoint}
+                  angleSetpoint={angleSetpoint}
+                  touching={true}
+                  atThrustSetpoint={false}
+                  atAngleSetpoint={false}
+                  angleAdvices={angleAdvices}
+                  thrustAdvices={thrustAdvices}
+                />
+              )}
+            </div>
             <div className="instrument-panel-row">
-              <InstrumentField
-                value={azimuthData.position_pri}
-                tag="Power"
-                unit="%"
-                source="Azimuth"
-                fractionDigits={1}
-                maxDigits={4}
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                value={negativeAngleToRealAngle(azimuthData.position_sec)}
-                degree={true}
-                tag="Angle"
-                unit="°"
-                source="Azimuth"
-                fractionDigits={1}
-                maxDigits={4}
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                value={simulatorData.rpm}
-                tag="RPM"
-                maxDigits={4}
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                value={simulatorData.speed}
-                tag="Speed"
-                unit="kn"
-                source="Simulator"
-                fractionDigits={1}
-                hasSource={true}
+              <SetpointSliders
+                thrustSetpoint={thrustSetpoint}
+                angleSetpoint={angleSetpoint}
+                onSetPointChange={handleSetPointChange}
               />
             </div>
-            <div className="instrument-panel-row"></div>
-            {showAzimuth && (
-              <MemoizedAzimuthThruster
-                thrust={thrust}
-                angle={negativeAngleToRealAngle(angle)}
-                thrustSetPoint={thrustSetpoint}
-                angleSetpoint={angleSetpoint}
-                touching={true}
-                atThrustSetpoint={false}
-                atAngleSetpoint={false}
-                angleAdvices={angleAdvices}
-                thrustAdvices={thrustAdvices}
+          </div>
+          <hr className="solid"></hr>
+          <h3>Navigation</h3>
+          <div className="instrument-panel-col">
+            <div className="instrument-panel-row">
+              <InstrumentField
+                setPoint={angleSetpoint}
+                hasSetPoint={true}
+                value={toHeading(simulatorData.heading)}
+                degree={true}
+                maxDigits={3}
+                fractionDigits={0}
+                tag="Heading"
+                unit="°"
+                source="Simulator"
+                hasSource={true}
+              ></InstrumentField>
+              <InstrumentField
+                setPoint={0}
+                hasSetPoint={true}
+                value={simulatorData.xPos}
+                degree={false}
+                maxDigits={4}
+                fractionDigits={1}
+                tag="X"
+                unit="m"
+                source="Simulator"
+                hasSource={true}
+              ></InstrumentField>
+              <InstrumentField
+                setPoint={0}
+                hasSetPoint={true}
+                value={simulatorData.yPos}
+                degree={false}
+                maxDigits={4}
+                fractionDigits={1}
+                tag="Y"
+                unit="m"
+                source="Simulator"
+                hasSource={true}
+              ></InstrumentField>
+            </div>
+            <div className="instrument-panel-row">
+              <MemoizedCompass
+                heading={simulatorData.heading}
+                courseOverGround={90}
+                headingAdvices={[]}
               />
-            )}
+            </div>
           </div>
-          <div className="instrument-panel-row">
-            <SetpointSliders
-              thrustSetpoint={thrustSetpoint}
-              angleSetpoint={angleSetpoint}
-              onSetPointChange={handleSetPointChange}
-            />
+          <hr className="solid"></hr>
+          {/* Others */}
+          <div className="info-card">
+            <h3>Eco Parameters</h3>
+            <div className="instrument-panel-row">
+              <InstrumentField
+                value={simulatorData.consumptionRate}
+                tag="FuelR"
+                unit="kg/h"
+                source="Simulator"
+                hasSource={true}
+                maxDigits={4}
+                fractionDigits={1}
+              ></InstrumentField>
+              <InstrumentField
+                value={gramsToKiloGrams(simulatorData.consumedTotal)}
+                tag="FuelT"
+                unit="kg"
+                source="Simulator"
+                hasSource={true}
+                maxDigits={4}
+                fractionDigits={2}
+              ></InstrumentField>
+              <InstrumentField
+                value={newtonsToKiloNewtons(simulatorData.resistance)}
+                tag="Res"
+                unit="KN"
+                source="Simulator"
+                hasSource={true}
+                maxDigits={4}
+                fractionDigits={1}
+              ></InstrumentField>
+            </div>
           </div>
-        </div>
-        <hr className="solid"></hr>
-        <h3>Navigation</h3>
-        <div className="instrument-panel-col">
-          <div className="instrument-panel-row">
-            <InstrumentField
-              setPoint={angleSetpoint}
-              hasSetPoint={true}
-              value={toHeading(simulatorData.heading)}
-              degree={true}
-              maxDigits={3}
-              fractionDigits={0}
-              tag="Heading"
-              unit="°"
-              source="Simulator"
-              hasSource={true}
-            ></InstrumentField>
-            <InstrumentField
-              setPoint={0}
-              hasSetPoint={true}
-              value={simulatorData.xPos}
-              degree={false}
-              maxDigits={4}
-              fractionDigits={1}
-              tag="X"
-              unit="m"
-              source="Simulator"
-              hasSource={true}
-            ></InstrumentField>
-            <InstrumentField
-              setPoint={0}
-              hasSetPoint={true}
-              value={simulatorData.yPos}
-              degree={false}
-              maxDigits={4}
-              fractionDigits={1}
-              tag="Y"
-              unit="m"
-              source="Simulator"
-              hasSource={true}
-            ></InstrumentField>
+          <hr className="solid"></hr>
+          {/* Checkpoints */}
+          <div className="info-card">
+            <h3>Checkpoints</h3>
+            <p>Remaining: {simulatorData.checkpoints} out of 3</p>
           </div>
-          <div className="instrument-panel-row">
-            <MemoizedCompass
-              heading={simulatorData.heading}
-              courseOverGround={90}
-              headingAdvices={[]}
-            />
-          </div>
-        </div>
-        <hr className="solid"></hr>
-        {/* Others */}
-        <div className="info-card">
-          <h3>Eco Parameters</h3>
-          <div className="instrument-panel-row">
-            <InstrumentField
-              value={simulatorData.consumptionRate}
-              tag="FuelR"
-              unit="kg/h"
-              source="Simulator"
-              hasSource={true}
-              maxDigits={4}
-              fractionDigits={1}
-            ></InstrumentField>
-            <InstrumentField
-              value={gramsToKiloGrams(simulatorData.consumedTotal)}
-              tag="FuelT"
-              unit="kg"
-              source="Simulator"
-              hasSource={true}
-              maxDigits={4}
-              fractionDigits={2}
-            ></InstrumentField>
-            <InstrumentField
-              value={newtonsToKiloNewtons(simulatorData.resistance)}
-              tag="Res"
-              unit="KN"
-              source="Simulator"
-              hasSource={true}
-              maxDigits={4}
-              fractionDigits={1}
-            ></InstrumentField>
-          </div>
-        </div>
-        <hr className="solid"></hr>
-        {/* Checkpoints */}
-        <div className="info-card">
-          <h3>Checkpoints</h3>
-          <p>Remaining: {simulatorData.checkpoints} out of 3</p>
         </div>
       </div>
     </div>
