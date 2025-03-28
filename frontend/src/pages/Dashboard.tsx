@@ -354,6 +354,8 @@ export function Dashboard() {
           setLogData={setLogData}
           isLogging={isLogging}
           selectedScenario={selectedScenario}
+          boundaryConfig={boundaryConfig}
+
         />
         {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
 

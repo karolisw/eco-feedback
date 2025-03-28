@@ -3,10 +3,12 @@ import { LogEntry } from '../types/LogEntry'
 import { saveAs } from 'file-saver'
 import * as Papa from 'papaparse'
 import '../styles/dashboard.css'
+import { BoundaryConfig } from '../types/BoundaryConfig'
 
 interface ScenarioLoggerProps {
   simulatorData: { thrust: number; angle: number }
   simulationRunning: boolean
+  boundaryConfig: BoundaryConfig[]
   isLogging: boolean
   logData: LogEntry[]
   setLogData: (updater: (prev: LogEntry[]) => LogEntry[]) => void
@@ -32,6 +34,7 @@ export function ScenarioLogger({
   configFileName,
   thrustAdvices,
   angleAdvices,
+  boundaryConfig,
   selectedScenario
 }: ScenarioLoggerProps) {
   const lastAlertTime = useRef<{ thrust: number | null; angle: number | null }>(
@@ -62,7 +65,11 @@ export function ScenarioLogger({
     angle: null
   })
 
-  // ⏱ T1: Enter alert zone
+  const boundaryActive = useRef<boolean>(false)
+  const boundaryEnterTime = useRef<number | null>(null)
+
+
+  // T1: Enter alert zone
   useEffect(() => {
     if (!isLogging) return
 
@@ -104,9 +111,25 @@ export function ScenarioLogger({
       alertTypeRef.current.angle = angleType
       firstResponseTime.current.angle = null
     }
-  }, [simulatorData, thrustAdvices, angleAdvices, isLogging])
 
-  // ⏱ T2: Operator responds
+    const inBoundary = boundaryConfig.some((b) => {
+      if (!b.enabled) return false
+      if (b.type === 'thrust') {
+        return simulatorData.thrust >= b.lower && simulatorData.thrust <= b.upper
+      }
+      if (b.type === 'angle') {
+        return simulatorData.angle >= b.lower && simulatorData.angle <= b.upper
+      }
+      return false
+    })
+    
+    if (inBoundary && !boundaryActive.current) {
+      boundaryActive.current = true
+      boundaryEnterTime.current = Date.now()
+    }
+  }, [simulatorData, thrustAdvices, angleAdvices, isLogging, boundaryConfig])
+
+  // T2: Operator responds
   useEffect(() => {
     if (!isLogging) return
     const now = Date.now()
@@ -123,7 +146,7 @@ export function ScenarioLogger({
     }
   }, [simulatorData, isLogging])
 
-  // ⏱ T3: Exit alert zone
+  // T3: Exit alert zone
   useEffect(() => {
     if (!isLogging) return
 
@@ -189,7 +212,40 @@ export function ScenarioLogger({
       lastAlertTime.current.angle = null
       firstResponseTime.current.angle = null
     }
-  }, [simulatorData, isLogging, angleAdvices, thrustAdvices, setLogData, selectedScenario])
+    const stillInBoundary = boundaryConfig.some((b) => {
+      if (!b.enabled) return false
+      if (b.type === 'thrust') {
+        return simulatorData.thrust >= b.lower && simulatorData.thrust <= b.upper
+      }
+      if (b.type === 'angle') {
+        return simulatorData.angle >= b.lower && simulatorData.angle <= b.upper
+      }
+      return false
+    })
+    
+    if (boundaryActive.current && !stillInBoundary) {
+      boundaryActive.current = false
+    
+      const enter = boundaryEnterTime.current ?? 0
+      const exitTime = Date.now() - enter
+    
+      setLogData((prev) => [
+        ...prev,
+        {
+          timestamp: now,
+          thrust: simulatorData.thrust,
+          azimuthAngle: simulatorData.angle,
+          reactionTime: null,
+          exitTime,
+          alertType: 'boundary',
+          alertCategory: 'thrust',
+          scenario: selectedScenario
+        }
+      ])
+    
+      boundaryEnterTime.current = null
+    }
+  }, [simulatorData, isLogging, angleAdvices, thrustAdvices, setLogData, selectedScenario, boundaryConfig])
 
   // Export on stop
   useEffect(() => {
