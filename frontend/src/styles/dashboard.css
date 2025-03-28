@@ -36,6 +36,7 @@
   display: flex;
   flex-direction: column; /* Ensure vertical stacking */
   padding: 20px;
+  margin-top: 2%;
   gap: 10px;
   background-color: #f8f8f8; /* Light background */
   overflow-y: auto; /* Allows scrolling if too much content */
