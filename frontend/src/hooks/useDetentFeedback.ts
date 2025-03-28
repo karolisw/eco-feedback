@@ -13,7 +13,7 @@ type UseDetentFeedbackProps = {
   thrustAdvices: LinearAdvice[]
   alertConfig: AlertConfig
   scenarioKey: string
-
+  detentEnabled: boolean
   sendToBackend: (data: unknown) => void
 }
 
@@ -24,7 +24,8 @@ export function useDetentFeedback({
   thrustAdvices,
   alertConfig,
   scenarioKey,
-  sendToBackend
+  sendToBackend,
+  detentEnabled
 }: UseDetentFeedbackProps) {
   const detentsSentRef = useRef(false)
 
@@ -35,7 +36,7 @@ export function useDetentFeedback({
   }, [angleAdvices, thrustAdvices, scenarioKey]) 
 
   useEffect(() => {
-    if (!alertConfig.enableDetents) return
+    if (!alertConfig.enableDetents || !detentEnabled) return
     if (detentsSentRef.current) return
     
     const angleReady = angle != null && !isNaN(angle)
@@ -77,5 +78,5 @@ export function useDetentFeedback({
     detentsSentRef.current = true
 
 
-  }, [thrust, angle, angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend])
+  }, [thrust, angle, angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend, detentEnabled])
 }
