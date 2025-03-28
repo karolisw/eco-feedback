@@ -443,8 +443,13 @@ class AzimuthController:
         try:
             await self.set_boundary(False, 0, 0, 0, 0)
             await self.client.write_register(address=140, value=0, slave=self.slave_id)
+            await self.client.write_register(address=141, value=0, slave=self.slave_id)
             await self.client.write_register(address=240, value=0, slave=self.slave_id)
+            await self.client.write_register(address=241, value=0, slave=self.slave_id)
             await self.client.write_coil(address=enable_detents_reg, value=False, slave=self.slave_id)
+            await self.client.write_coil(address=40, value=False, slave=self.slave_id)
+            await self.client.write_coil(address=41, value=False, slave=self.slave_id)
+
             
             logger.info(f" Disabled detents at register {enable_detents_reg}")
             
