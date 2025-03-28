@@ -116,6 +116,10 @@ class Dashboard:
                     logger.info("Boundary successfully updated.")
                 else:
                     logger.error("Failed to update boundary.")
+                    
+            elif data["command"] == "clear_haptics":
+                logger.info("Received command: clear_haptics")
+                await controller.clear_haptics()
 
             # Handle stop simulation command
             if data.get("command") == "stop_simulation":

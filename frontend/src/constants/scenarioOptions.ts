@@ -4,5 +4,5 @@ export const scenarioOptions: Record<ScenarioKey, string> = {
     'maintain-speed': 'Maintain Speed',
     'turn-around': 'Turn Around',
     'navigate-buoys': 'Navigate Buoys',
-    'depart-harbor': 'Depart Harbor'
+    'depart-harbor': 'Depart Harbor',
   }

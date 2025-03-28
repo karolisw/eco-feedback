@@ -32,7 +32,12 @@ export function ScenarioControlPanel({
         <label>Scenario</label>
         <select
           value={selectedScenario}
-          onChange={(e) => onScenarioChange(e.target.value as ScenarioKey)}
+          onChange={(e) => {
+            const newValue = e.target.value as ScenarioKey
+            if (newValue !== selectedScenario) {
+              onScenarioChange(newValue)
+            }
+          }}
         >
           {Object.entries(scenarioOptions).map(([key, label]) => (
             <option key={key} value={key}>
