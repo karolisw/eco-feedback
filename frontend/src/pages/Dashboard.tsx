@@ -243,7 +243,8 @@ export function Dashboard() {
     alertConfig,
     sendToBackend,
     scenarioKey: selectedScenario,
-    detentEnabled: scenarioAdviceMap[selectedScenario]?.detent ?? false
+    angleDetents: scenarioAdviceMap[selectedScenario]?.angleDetents,
+    thrustDetents: scenarioAdviceMap[selectedScenario]?.thrustDetents
   })
 
   useBoundaryFeedback({

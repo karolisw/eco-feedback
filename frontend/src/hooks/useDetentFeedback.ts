@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react'
-import {
-  AdviceType,
+import { 
   AngleAdvice
 } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AlertConfig } from '../types/AlertConfig'
+
+type DetentStrengthMap = {
+  advice: number
+  caution: number
+}
 
 type UseDetentFeedbackProps = {
   thrust: number
@@ -13,7 +17,8 @@ type UseDetentFeedbackProps = {
   thrustAdvices: LinearAdvice[]
   alertConfig: AlertConfig
   scenarioKey: string
-  detentEnabled: boolean
+  angleDetents: DetentStrengthMap
+  thrustDetents: DetentStrengthMap
   sendToBackend: (data: unknown) => void
 }
 
@@ -24,59 +29,71 @@ export function useDetentFeedback({
   thrustAdvices,
   alertConfig,
   scenarioKey,
-  sendToBackend,
-  detentEnabled
+  angleDetents,
+  thrustDetents,
+  sendToBackend
 }: UseDetentFeedbackProps) {
   const detentsSentRef = useRef(false)
 
-  // Reset detentsSentRef when advices change
-  useEffect(() => { 
-    console.log("advices changed -> resetting detentsSentRef")
+  useEffect(() => {
     detentsSentRef.current = false
   }, [angleAdvices, thrustAdvices, scenarioKey]) 
 
   useEffect(() => {
-    if (!alertConfig.enableDetents || !detentEnabled) return
+    if (!alertConfig.enableDetents) return
     if (detentsSentRef.current) return
-    
+
     const angleReady = angle != null && !isNaN(angle)
     const thrustReady = thrust != null && !isNaN(thrust)
     const hasAdviceZones = angleAdvices.length > 0 || thrustAdvices.length > 0
-    
+
     if (!(angleReady || thrustReady)) return
     if (!hasAdviceZones) return
 
-
-    // Set detents for angle-based advice zones
+    // ANGLE DETENTS
     for (const advice of angleAdvices) {
-      if (advice.type === AdviceType.advice) {
-        const pos = Math.round((advice.minAngle + advice.maxAngle) / 2)
-        console.log('[Detent] Setting ANGLE detent at', pos)
-        sendToBackend({
-          command: 'set_detent',
-          type: 'angle',
-          pos,
-          detent: 1
-        })
+      const strength = angleDetents[advice.type]
+      if (strength > 0) {
+        const entries = [advice.minAngle, advice.maxAngle] // Entry + Exit detents
+        for (const pos of entries) {
+          console.log(`[Detent] Setting ANGLE detent at ${pos} (strength ${strength})`)
+          sendToBackend({
+            command: 'set_detent',
+            type: 'angle',
+            pos,
+            detent: strength
+          })
+        }
       }
     }
+    
 
-    // Set detents for thrust-based advice zones
+    // THRUST DETENTS
     for (const advice of thrustAdvices) {
-      if (advice.type === AdviceType.advice) {
-        const pos = Math.round((advice.min + advice.max) / 2)
-        console.log('[Detent] Setting THRUST detent at', pos)
-        sendToBackend({
-          command: 'set_detent',
-          type: 'thrust',
-          pos,
-          detent: 1
-        })
-        console.log('[Detent] WebSocket send attempted.')
+      const strength = thrustDetents[advice.type]
+      if (strength > 0) {
+        const entries = [advice.min, advice.max]
+        for (const pos of entries) {
+          console.log(`[Detent] Setting THRUST detent at ${pos} (strength ${strength})`)
+          sendToBackend({
+            command: 'set_detent',
+            type: 'thrust',
+            pos,
+            detent: strength
+          })
+        }
       }
     }
+
     detentsSentRef.current = true
-
-
-  }, [thrust, angle, angleAdvices, thrustAdvices, alertConfig.enableDetents, sendToBackend, detentEnabled])
+  }, [
+    thrust,
+    angle,
+    angleAdvices,
+    thrustAdvices,
+    alertConfig.enableDetents,
+    angleDetents,
+    thrustDetents,
+    sendToBackend
+  ])
 }
