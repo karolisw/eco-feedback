@@ -1,7 +1,6 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
-import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
 //import { TaskInstruction } from '../components/TaskInstruction'
@@ -17,7 +16,6 @@ import { BoundaryConfig } from '../types/BoundaryConfig'
 import { ScenarioControlPanel } from '../components/controlPanel/ScenarioControlPanel'
 
 import {
-  toHeading,
   gramsToKiloGrams,
   calculateAverage,
   newtonsToKiloNewtons,
@@ -105,7 +103,6 @@ export function Dashboard() {
 
   // Memoized Component to prevent unnecessary re-renders
   const MemoizedAzimuthThruster = memo(AzimuthThruster)
-  const MemoizedCompass = memo(Compass)
   const thrust = useMemo(
     () => azimuthData.position_pri,
     [azimuthData.position_pri]
@@ -399,55 +396,6 @@ export function Dashboard() {
                   thrustAdvices={thrustAdvices}
                 />
               )}
-            </div>
-          </div>
-          <hr className="solid"></hr>
-          <h3>Navigation</h3>
-          <div className="instrument-panel-col">
-            <div className="instrument-panel-row">
-              <InstrumentField
-                setPoint={angleSetpoint}
-                hasSetPoint={true}
-                value={toHeading(simulatorData.heading)}
-                degree={true}
-                maxDigits={3}
-                fractionDigits={0}
-                tag="Heading"
-                unit="°"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                setPoint={0}
-                hasSetPoint={true}
-                value={simulatorData.xPos}
-                degree={false}
-                maxDigits={4}
-                fractionDigits={1}
-                tag="X"
-                unit="m"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                setPoint={0}
-                hasSetPoint={true}
-                value={simulatorData.yPos}
-                degree={false}
-                maxDigits={4}
-                fractionDigits={1}
-                tag="Y"
-                unit="m"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-            </div>
-            <div className="instrument-panel-row">
-              <MemoizedCompass
-                heading={simulatorData.heading}
-                courseOverGround={90}
-                headingAdvices={[]}
-              />
             </div>
           </div>
           <hr className="solid"></hr>
