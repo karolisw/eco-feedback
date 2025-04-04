@@ -1,7 +1,6 @@
 import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/watch/advice'
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AzimuthThruster } from '../components/AzimuthThruster'
-import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
 import { UseWebSocket } from '../hooks/useWebSocket'
@@ -16,14 +15,12 @@ import { BoundaryConfig } from '../types/BoundaryConfig'
 import { ScenarioControlPanel } from '../components/controlPanel/ScenarioControlPanel'
 
 import {
-  toHeading,
   gramsToKiloGrams,
   calculateAverage,
   newtonsToKiloNewtons,
   negativeAngleToRealAngle
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
-import { SetpointSliders } from '../components/SetpointSliders'
 import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
 import { useDetentFeedback } from '../hooks/useDetentFeedback'
@@ -45,15 +42,14 @@ type LocationState = {
 
 export function Dashboard() {
   const { simulationRunning, setSimulationRunning } = useSimulation() // Retrieving simulation running state from context
-  const [thrustSetpoint, setThrustSetpoint] = useState<number>(0)
-  const [angleSetpoint, setAngleSetpoint] = useState<number>(0)
+  const [thrustSetpoint] = useState<number>(0)
+  const [angleSetpoint] = useState<number>(0)
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
   const [alertTime, setAlertTime] = useState<number | null>(null)
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const [showAzimuth, setShowAzimuth] = useState(true)
   const [boundaryConfig, setBoundaryConfig] = useState<BoundaryConfig[]>([])
-  const [currentTask, setCurrentTask] = useState<number>(1)
   const [isLogging, setIsLogging] = useState(false)
   const [logData, setLogData] = useState<LogEntry[]>([])
   const scenarioId = useRef<string | null>(null)
@@ -104,7 +100,6 @@ export function Dashboard() {
 
   // Memoized Component to prevent unnecessary re-renders
   const MemoizedAzimuthThruster = memo(AzimuthThruster)
-  const MemoizedCompass = memo(Compass)
   const thrust = useMemo(
     () => azimuthData.position_pri,
     [azimuthData.position_pri]
@@ -149,7 +144,6 @@ export function Dashboard() {
     if (config.boundaries) {
       setBoundaryConfig(config.boundaries)
     }
-    setCurrentTask(1)
   }, [selectedScenario, sendToBackend])
 
   useEffect(() => {
@@ -238,8 +232,10 @@ export function Dashboard() {
     alertConfig,
     sendToBackend,
     scenarioKey: selectedScenario,
-    angleDetentStrength: scenarioAdviceMap[selectedScenario].angleDetentStrength,
-    thrustDetentStrength: scenarioAdviceMap[selectedScenario].thrustDetentStrength
+    angleDetentStrength:
+      scenarioAdviceMap[selectedScenario].angleDetentStrength,
+    thrustDetentStrength:
+      scenarioAdviceMap[selectedScenario].thrustDetentStrength
   })
 
   useBoundaryFeedback({
@@ -281,23 +277,6 @@ export function Dashboard() {
     void navigate('/')
   }
 
-  const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
-    console.log('handling set point change')
-    // Update state immediately
-    if (type === 'thrust') {
-      setThrustSetpoint(value)
-    } else {
-      setAngleSetpoint(value)
-    }
-
-    // Send a command to the backend
-    sendToBackend({
-      command: 'set_setpoint',
-      thrust_setpoint: type === 'thrust' ? value : thrustSetpoint,
-      angle_setpoint: type === 'angle' ? value : angleSetpoint
-    })
-  }
-
   const startLogging = () => {
     if (!simulationRunning) {
       console.warn('Cannot start logging when simulation is not running.')
@@ -329,8 +308,6 @@ export function Dashboard() {
       <ScenarioControlPanel
         selectedScenario={selectedScenario}
         onScenarioChange={setSelectedScenario}
-        currentTask={currentTask}
-        onTaskChange={setCurrentTask}
         showAzimuth={showAzimuth}
         toggleAzimuth={() => setShowAzimuth((prev) => !prev)}
         onStopSimulation={stopSimulation}
@@ -352,7 +329,6 @@ export function Dashboard() {
           isLogging={isLogging}
           selectedScenario={selectedScenario}
           boundaryConfig={boundaryConfig}
-
         />
 
         {/* Simulator Panel */}
@@ -416,62 +392,6 @@ export function Dashboard() {
                 />
               )}
             </div>
-            <div className="instrument-panel-row">
-              <SetpointSliders
-                thrustSetpoint={thrustSetpoint}
-                angleSetpoint={angleSetpoint}
-                onSetPointChange={handleSetPointChange}
-              />
-            </div>
-          </div>
-          <hr className="solid"></hr>
-          <h3>Navigation</h3>
-          <div className="instrument-panel-col">
-            <div className="instrument-panel-row">
-              <InstrumentField
-                setPoint={angleSetpoint}
-                hasSetPoint={true}
-                value={toHeading(simulatorData.heading)}
-                degree={true}
-                maxDigits={3}
-                fractionDigits={0}
-                tag="Heading"
-                unit="°"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                setPoint={0}
-                hasSetPoint={true}
-                value={simulatorData.xPos}
-                degree={false}
-                maxDigits={4}
-                fractionDigits={1}
-                tag="X"
-                unit="m"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-              <InstrumentField
-                setPoint={0}
-                hasSetPoint={true}
-                value={simulatorData.yPos}
-                degree={false}
-                maxDigits={4}
-                fractionDigits={1}
-                tag="Y"
-                unit="m"
-                source="Simulator"
-                hasSource={true}
-              ></InstrumentField>
-            </div>
-            <div className="instrument-panel-row">
-              <MemoizedCompass
-                heading={simulatorData.heading}
-                courseOverGround={90}
-                headingAdvices={[]}
-              />
-            </div>
           </div>
           <hr className="solid"></hr>
           {/* Others */}
@@ -506,12 +426,6 @@ export function Dashboard() {
                 fractionDigits={1}
               ></InstrumentField>
             </div>
-          </div>
-          <hr className="solid"></hr>
-          {/* Checkpoints */}
-          <div className="info-card">
-            <h3>Checkpoints</h3>
-            <p>Remaining: {simulatorData.checkpoints} out of 3</p>
           </div>
         </div>
       </div>
