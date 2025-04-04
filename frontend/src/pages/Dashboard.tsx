@@ -4,7 +4,6 @@ import { AzimuthThruster } from '../components/AzimuthThruster'
 import { Compass } from '../components/Compass'
 import { InstrumentField } from '../components/InstrumentField'
 import { ScenarioLogger } from '../components/ScenarioLogger'
-//import { TaskInstruction } from '../components/TaskInstruction'
 import { UseWebSocket } from '../hooks/useWebSocket'
 import { UseSimulatorWebSocket } from '../hooks/useSimulatorWebSocket'
 import { memo, useEffect, useRef, useState, useMemo } from 'react'
@@ -73,8 +72,6 @@ export function Dashboard() {
 
   // Keep track of last sent command
   const lastSentCommand = useRef<{ thrust: number; angle: number } | null>(null)
-
-  //const alertTriggeredRef = useRef<boolean>(false)
 
   const initialData: DashboardData = {
     position_pri: 0,
@@ -209,8 +206,6 @@ export function Dashboard() {
     angleSetpoint,
     onResponse: () => {
       setAlertTime(null)
-      // optionally reset alert type or add logging
-      // alertTriggeredRef.current = false
     }
   })
 
@@ -359,7 +354,6 @@ export function Dashboard() {
           boundaryConfig={boundaryConfig}
 
         />
-        {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
 
         {/* Simulator Panel */}
         {simulationRunning && (
