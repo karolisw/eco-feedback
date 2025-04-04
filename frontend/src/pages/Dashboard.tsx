@@ -24,7 +24,6 @@ import {
   negativeAngleToRealAngle
 } from '../utils/Convertion'
 import { useSimulation } from '../hooks/useSimulation'
-import { SetpointSliders } from '../components/SetpointSliders'
 import { useFrictionFeedback } from '../hooks/useFrictionFeedback'
 import { useVibrationFeedback } from '../hooks/useVibrationFeedback'
 import { useDetentFeedback } from '../hooks/useDetentFeedback'
@@ -46,8 +45,8 @@ type LocationState = {
 
 export function Dashboard() {
   const { simulationRunning, setSimulationRunning } = useSimulation() // Retrieving simulation running state from context
-  const [thrustSetpoint, setThrustSetpoint] = useState<number>(0)
-  const [angleSetpoint, setAngleSetpoint] = useState<number>(0)
+  const [thrustSetpoint] = useState<number>(0)
+  const [angleSetpoint] = useState<number>(0)
   const [speedData, setSpeedData] = useState<number[]>([])
   const [rpmData, setRpmData] = useState<number[]>([])
   const [alertTime, setAlertTime] = useState<number | null>(null)
@@ -286,23 +285,6 @@ export function Dashboard() {
     void navigate('/')
   }
 
-  const handleSetPointChange = (type: 'thrust' | 'angle', value: number) => {
-    console.log('handling set point change')
-    // Update state immediately
-    if (type === 'thrust') {
-      setThrustSetpoint(value)
-    } else {
-      setAngleSetpoint(value)
-    }
-
-    // Send a command to the backend
-    sendToBackend({
-      command: 'set_setpoint',
-      thrust_setpoint: type === 'thrust' ? value : thrustSetpoint,
-      angle_setpoint: type === 'angle' ? value : angleSetpoint
-    })
-  }
-
   const startLogging = () => {
     if (!simulationRunning) {
       console.warn('Cannot start logging when simulation is not running.')
@@ -356,6 +338,7 @@ export function Dashboard() {
           selectedScenario={selectedScenario}
           boundaryConfig={boundaryConfig}
         />
+
         {/* Simulator Panel */}
         {simulationRunning && (
           <div className="simulator-panel">
@@ -416,13 +399,6 @@ export function Dashboard() {
                   thrustAdvices={thrustAdvices}
                 />
               )}
-            </div>
-            <div className="instrument-panel-row">
-              <SetpointSliders
-                thrustSetpoint={thrustSetpoint}
-                angleSetpoint={angleSetpoint}
-                onSetPointChange={handleSetPointChange}
-              />
             </div>
           </div>
           <hr className="solid"></hr>
