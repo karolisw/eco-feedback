@@ -279,63 +279,58 @@ class AzimuthController:
             return False
         
         
-    async def set_detent(self, detent: int, type: int, pos: int):
-        """
-        Writes the detent value to the Modbus register.
-
-        :param detent_value: The detent value to set (0 - 3).
-        :param type: The type of detent to set ("angle", "thrust").
-        :param position: The position of the detent to set (0-100 or 0-359).
-        """
+    async def set_detents(self, detent_strength: int, type: str, detents: list[int]):
         if not self.client or not self.client.connected:
-            print("[ERROR] Not connected to Modbus. Cannot set detent.")
+            print("[ERROR] Not connected to Modbus. Cannot set detents.")
             return False
-        
-        thrust_hreg_pos1 = 140
-        thrust_hreg_pos2 = 141
-        
-        angle_hreg_pos1 = 240
-        angle_hreg_pos2 = 241
-        
+
+        thrust_hregs = [140, 141]
+        angle_hregs = [240, 241]
         strength_thrust_hreg = 100
         strength_angle_hreg = 200
-        
-        try:
-            # Enable the use of detents
-            await self.client.write_coil(address=1, value=True, slave=self.slave_id)
-            
-            # Enable only these detent registers
-            await self.client.write_coil(thrust_hreg_pos1, value=True, slave=self.slave_id)
-            await self.client.write_coil(angle_hreg_pos1, value=True, slave=self.slave_id)
-            
-            # Disable the other two detent registers
-            await self.client.write_coil(thrust_hreg_pos2, value=False, slave=self.slave_id)
-            await self.client.write_coil(angle_hreg_pos2, value=False, slave=self.slave_id)
-            
-            if (type == "thrust"):
-                logger.info("Trying to set detents for thruster")
-                # The positioning of the detents
-                await self.client.write_register(address=thrust_hreg_pos1, value=pos, slave=self.slave_id)
-                logger.info(f"Detent has been set for thruster with address: {thrust_hreg_pos1}")
-                logger.info(f"and value: {pos}")
 
-                # The strength of the detents
-                await self.client.write_register(address=strength_thrust_hreg, value=detent, slave=self.slave_id)
-                
-                logger.info(f" Set detent value to {detent} at register {strength_thrust_hreg}")
+        try:
+            # Enable detents globally
+            await self.client.write_coil(address=1, value=True, slave=self.slave_id)
+
+            # Safety: Only support up to 2 detents due to register limitations
+            detents = detents[:2]
+
+            if type == "thrust":
+                logger.info("Trying to set detents for thruster")
+
+                # Enable only the needed coils
+                for i, reg in enumerate(thrust_hregs):
+                    await self.client.write_coil(reg, value=(i < len(detents)), slave=self.slave_id)
+
+                # Write detent positions
+                for i, pos in enumerate(detents):
+                    await self.client.write_register(thrust_hregs[i], value=pos, slave=self.slave_id)
+                    logger.info(f"Set THRUST detent {i+1} at pos={pos} (reg={thrust_hregs[i]})")
+
+                await self.client.write_register(strength_thrust_hreg, value=detent_strength, slave=self.slave_id)
+                logger.info(f"Set THRUST strength {detent_strength} at reg={strength_thrust_hreg}")
                 return True
-            if (type == "angle"):
-                # The positioning of the detents
-                await self.client.write_register(address=angle_hreg_pos1, value=pos, slave=self.slave_id)
-                logger.info(f"Detent has been set for angle with address: {angle_hreg_pos1}")
-                logger.info(f"and value: {pos}")
-                # The strength of the detents
-                await self.client.write_register(address=strength_angle_hreg, value=detent, slave=self.slave_id)
-                logger.info(f" Set detent value to {detent} at register {strength_angle_hreg}")
+
+            elif type == "angle":
+                logger.info("Trying to set detents for angle")
+
+                for i, reg in enumerate(angle_hregs):
+                    await self.client.write_coil(reg, value=(i < len(detents)), slave=self.slave_id)
+
+                for i, pos in enumerate(detents):
+                    await self.client.write_register(angle_hregs[i], value=pos, slave=self.slave_id)
+                    logger.info(f"Set ANGLE detent {i+1} at pos={pos} (reg={angle_hregs[i]})")
+
+                await self.client.write_register(strength_angle_hreg, value=detent_strength, slave=self.slave_id)
+                logger.info(f"Set ANGLE strength {detent_strength} at reg={strength_angle_hreg}")
                 return True
+
         except ModbusIOException as e:
-            logger.error(f"[ERROR] Modbus IO Exception while writing detent: {e}")
-            return False 
+            logger.error(f"[ERROR] Modbus IO Exception while writing detents: {e}")
+            return False
+
+
         
     async def set_boundary(self, enable:bool, boundary: int, type: int, lower: int, upper: int):
         """
