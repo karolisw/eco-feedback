@@ -9,14 +9,8 @@ import { BoundaryConfig } from '../types/BoundaryConfig'
 export const scenarioAdviceMap: Record<
   ScenarioKey,
   {
-    angleDetents: {
-      advice: number
-      caution: number
-    }
-    thrustDetents: {
-      advice: number
-      caution: number
-    }
+    angleDetentStrength: number
+    thrustDetentStrength: number
     angleAdvices: AngleAdvice[]
     thrustAdvices: LinearAdvice[]
     boundaries?: BoundaryConfig[]
@@ -27,14 +21,8 @@ export const scenarioAdviceMap: Record<
   // Detent is at the end of the advice zone
   // Caution zone is right behind the advice zone
   'maintain-speed': {
-    angleDetents: {
-      advice: 0,
-      caution: 0
-    },
-    thrustDetents: {
-      advice: 2,
-      caution: 3
-    },
+    angleDetentStrength: 0,
+    thrustDetentStrength: 1,
     angleAdvices: [],
     thrustAdvices: [
       { min: 20, max: 50, type: AdviceType.advice, hinted: true },
@@ -43,14 +31,8 @@ export const scenarioAdviceMap: Record<
   },
   // The operator should turn the vessel around, but they should not turn around too quickly
   'turn-around': {
-    angleDetents: {
-      advice: 1,
-      caution: 3
-    },
-    thrustDetents: {
-      advice: 1,
-      caution: 3
-    },
+    angleDetentStrength: 1,
+    thrustDetentStrength: 1,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
@@ -61,14 +43,8 @@ export const scenarioAdviceMap: Record<
   },
   // The operator should aim to hit the buoys
   'navigate-buoys': {
-    angleDetents: {
-      advice: 1,
-      caution: 3
-    },
-    thrustDetents: {
-      advice: 1,
-      caution: 3
-    },
+    angleDetentStrength: 1,
+    thrustDetentStrength: 1,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
@@ -84,14 +60,8 @@ export const scenarioAdviceMap: Record<
   // After leaving the harbor, they should aim for 8 knots
   // Due to the speed limit, boundaries should be set at 4 knots
   'depart-harbor': {
-    thrustDetents: {
-      advice: 1,
-      caution: 3
-    },
-    angleDetents: {
-      advice: 1,
-      caution: 3
-    },
+    angleDetentStrength: 1,
+    thrustDetentStrength: 1,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
       { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
@@ -111,22 +81,58 @@ export const scenarioAdviceMap: Record<
       }
     ]
   },
-  'scenario-5': {
-    angleDetents: {
-      advice: 1, // soft detents for advice zones
-      caution: 3 // hard detents for caution zones
-    },
-    thrustDetents: {
-      advice: 1, // soft detents for advice zones
-      caution: 3 // hard detents for caution zones
-    },
+  'advice-detent-1': {
+    angleDetentStrength: 1,
+    thrustDetentStrength: 1,
+    angleAdvices: [
+      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true }
+    ],
+    thrustAdvices: [{ min: 30, max: 80, type: AdviceType.advice, hinted: true }]
+  },
+  'advice-detent-2': {
+    angleDetentStrength: 2,
+    thrustDetentStrength: 2,
+    angleAdvices: [
+      { minAngle: 30, maxAngle: 50, type: AdviceType.advice, hinted: true }
+    ],
+    thrustAdvices: [{ min: 10, max: 40, type: AdviceType.advice, hinted: true }]
+  },
+  'advice-detent-3': {
+    angleDetentStrength: 3,
+    thrustDetentStrength: 3,
     angleAdvices: [
       { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
-      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
+      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true }
+    ],
+    thrustAdvices: [{ min: 0, max: 40, type: AdviceType.advice, hinted: true }]
+  },
+  'caution-detent-1': {
+    angleDetentStrength: 1,
+    thrustDetentStrength: 1,
+    angleAdvices: [
+      { minAngle: 60, maxAngle: 110, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [
-      { min: 0, max: 40, type: AdviceType.advice, hinted: true },
+      { min: 80, max: 100, type: AdviceType.caution, hinted: true }
+    ]
+  },
+  'caution-detent-2': {
+    angleDetentStrength: 2,
+    thrustDetentStrength: 2,
+    angleAdvices: [
+      { minAngle: 60, maxAngle: 120, type: AdviceType.caution, hinted: true }
+    ],
+    thrustAdvices: [
+      { min: 50, max: 100, type: AdviceType.caution, hinted: true }
+    ]
+  },
+  'caution-detent-3': {
+    angleDetentStrength: 3,
+    thrustDetentStrength: 3,
+    angleAdvices: [
+      { minAngle: 60, maxAngle: 130, type: AdviceType.caution, hinted: true }
+    ],
+    thrustAdvices: [
       { min: 50, max: 100, type: AdviceType.caution, hinted: true }
     ]
   }
