@@ -4,8 +4,6 @@ import { ScenarioKey, scenarioOptions } from '../../constants/scenarioOptions'
 interface ScenarioControlPanelProps {
   selectedScenario: ScenarioKey
   onScenarioChange: (scenario: ScenarioKey) => void
-  currentTask: number
-  onTaskChange: (taskNumber: number) => void
   showAzimuth: boolean
   toggleAzimuth: () => void
   onStopSimulation: () => void
@@ -17,8 +15,6 @@ interface ScenarioControlPanelProps {
 export function ScenarioControlPanel({
   selectedScenario,
   onScenarioChange,
-  currentTask,
-  onTaskChange,
   showAzimuth,
   toggleAzimuth,
   onStopSimulation,
@@ -44,16 +40,6 @@ export function ScenarioControlPanel({
               {label}
             </option>
           ))}
-        </select>
-
-        <label>Task</label>
-        <select
-          value={currentTask}
-          onChange={(e) => onTaskChange(Number(e.target.value))}
-        >
-          <option value={1}>Task 1</option>
-          <option value={2}>Task 2</option>
-          <option value={3}>Task 3</option>
         </select>
 
         <button className="azimuth-button" onClick={toggleAzimuth}>

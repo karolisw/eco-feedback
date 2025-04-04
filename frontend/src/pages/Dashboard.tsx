@@ -54,7 +54,6 @@ export function Dashboard() {
   const [, setAlertType] = useState<'advice' | 'caution' | null>(null)
   const [showAzimuth, setShowAzimuth] = useState(true)
   const [boundaryConfig, setBoundaryConfig] = useState<BoundaryConfig[]>([])
-  const [currentTask, setCurrentTask] = useState<number>(1)
   const [isLogging, setIsLogging] = useState(false)
   const [logData, setLogData] = useState<LogEntry[]>([])
   const scenarioId = useRef<string | null>(null)
@@ -152,7 +151,6 @@ export function Dashboard() {
     if (config.boundaries) {
       setBoundaryConfig(config.boundaries)
     }
-    setCurrentTask(1)
   }, [selectedScenario, sendToBackend])
 
   useEffect(() => {
@@ -243,8 +241,10 @@ export function Dashboard() {
     alertConfig,
     sendToBackend,
     scenarioKey: selectedScenario,
-    angleDetentStrength: scenarioAdviceMap[selectedScenario].angleDetentStrength,
-    thrustDetentStrength: scenarioAdviceMap[selectedScenario].thrustDetentStrength
+    angleDetentStrength:
+      scenarioAdviceMap[selectedScenario].angleDetentStrength,
+    thrustDetentStrength:
+      scenarioAdviceMap[selectedScenario].thrustDetentStrength
   })
 
   useBoundaryFeedback({
@@ -334,8 +334,6 @@ export function Dashboard() {
       <ScenarioControlPanel
         selectedScenario={selectedScenario}
         onScenarioChange={setSelectedScenario}
-        currentTask={currentTask}
-        onTaskChange={setCurrentTask}
         showAzimuth={showAzimuth}
         toggleAzimuth={() => setShowAzimuth((prev) => !prev)}
         onStopSimulation={stopSimulation}
@@ -357,10 +355,7 @@ export function Dashboard() {
           isLogging={isLogging}
           selectedScenario={selectedScenario}
           boundaryConfig={boundaryConfig}
-
         />
-        {/*<TaskInstruction scenario={selectedScenario} taskNumber={currentTask} />*/}
-
         {/* Simulator Panel */}
         {simulationRunning && (
           <div className="simulator-panel">
