@@ -432,12 +432,6 @@ export function Dashboard() {
               ></InstrumentField>
             </div>
           </div>
-          <hr className="solid"></hr>
-          {/* Checkpoints */}
-          <div className="info-card">
-            <h3>Checkpoints</h3>
-            <p>Remaining: {simulatorData.checkpoints} out of 3</p>
-          </div>
         </div>
       </div>
     </div>
