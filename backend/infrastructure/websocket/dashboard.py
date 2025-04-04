@@ -79,14 +79,15 @@ class Dashboard:
                     logger.error("Failed to update vibration.")
                     
             # Handle detent updates
-            if data.get("command") == "set_detent":
+            if data.get("command") == "set_detents":
                 logger.info("Detent update request received.")
                 detent = data.get("detent", 0)
                 type = data.get("type", 0)
-                pos = data.get("pos", 0)
-                logger.info(f"Setting detent to {detent}")
+                #pos = data.get("pos", 0)
+                detents = data.get("detents", [])
+                logger.info(f"Setting detent for {type}")
 
-                success = await self.controller.set_detent(detent, type, pos)
+                success = await self.controller.set_detents(detent, type, detents)
                 if success:
                     logger.info("Detent successfully updated.")
                 else:
