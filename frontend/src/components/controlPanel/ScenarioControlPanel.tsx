@@ -15,8 +15,6 @@ interface ScenarioControlPanelProps {
 export function ScenarioControlPanel({
   selectedScenario,
   onScenarioChange,
-  showAzimuth,
-  toggleAzimuth,
   onStopSimulation,
   simulationRunning
 }: ScenarioControlPanelProps) {
@@ -39,10 +37,6 @@ export function ScenarioControlPanel({
             </option>
           ))}
         </select>
-
-        <button className="azimuth-button" onClick={toggleAzimuth}>
-          {showAzimuth ? 'Hide Azimuth' : 'Show Azimuth'}
-        </button>
         <button
           onClick={onStopSimulation}
           className={simulationRunning ? 'stop-button' : 'disabled-button'}
