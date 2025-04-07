@@ -18,9 +18,7 @@ export function ScenarioControlPanel({
   showAzimuth,
   toggleAzimuth,
   onStopSimulation,
-  simulationRunning,
-  onToggleScenario,
-  isLogging
+  simulationRunning
 }: ScenarioControlPanelProps) {
   return (
     <div className="navbar">
@@ -44,12 +42,6 @@ export function ScenarioControlPanel({
 
         <button className="azimuth-button" onClick={toggleAzimuth}>
           {showAzimuth ? 'Hide Azimuth' : 'Show Azimuth'}
-        </button>
-        <button
-          onClick={onToggleScenario}
-          className={isLogging ? 'stop-button' : 'start-button'}
-        >
-          {isLogging ? 'Stop Scenario' : 'Start Scenario'}
         </button>
         <button
           onClick={onStopSimulation}
