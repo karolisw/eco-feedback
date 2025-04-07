@@ -120,8 +120,9 @@ export function Dashboard() {
       state?.alertConfig ||
       ({
         vibrationEnter: 2,
-        enableVibration: true,
+        enableVibration: false,
         enableDetents: false,
+        enableBoundaries: false,
         adviceHighResistance: true,
         regularHighResistance: true
       } as AlertConfig),
@@ -239,6 +240,7 @@ export function Dashboard() {
   })
 
   useBoundaryFeedback({
+    enabled: alertConfig.enableBoundaries,
     config: boundaryConfig,
     sendToBackend
   })
@@ -276,7 +278,7 @@ export function Dashboard() {
     // Redirect back to startup page
     void navigate('/')
   }
-  
+
   const handleScenarioChange = (newScenario: ScenarioKey) => {
     if (newScenario !== selectedScenario) {
       // If logging is active, stop it and save current data

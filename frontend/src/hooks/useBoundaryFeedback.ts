@@ -3,15 +3,18 @@ import { BoundaryConfig } from '../types/BoundaryConfig'
 
 
 interface UseBoundaryFeedbackProps {
+  enabled: boolean
   config: BoundaryConfig[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendToBackend: (message: any) => void
 }
 
-export function useBoundaryFeedback({ config, sendToBackend }: UseBoundaryFeedbackProps) {
+export function useBoundaryFeedback({ enabled, config, sendToBackend }: UseBoundaryFeedbackProps) {
     const sentRef = useRef<string>('')
 
   useEffect(() => {
+    if (!enabled) return
+
     const serialized = JSON.stringify(config)
     if (sentRef.current === serialized) return // skip repeat sends of the same boundaries
 
@@ -31,5 +34,5 @@ export function useBoundaryFeedback({ config, sendToBackend }: UseBoundaryFeedba
     })
     sentRef.current = serialized
 
-  }, [config, sendToBackend])
+  }, [config, enabled, sendToBackend])
 }
