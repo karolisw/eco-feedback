@@ -71,9 +71,11 @@ export const scenarioAdviceMap: Record<
     angleDetentStrength: 1,
     thrustDetentStrength: 1,
     angleAdvices: [
-      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true }
+      { minAngle: 1, maxAngle: 40, type: AdviceType.caution, hinted: true }
     ],
-    thrustAdvices: [{ min: 30, max: 80, type: AdviceType.advice, hinted: true }]
+    thrustAdvices: [
+      { min: 30, max: 80, type: AdviceType.caution, hinted: true }
+    ]
   },
   'narrow-fjord': {
     angleDetentStrength: 1,
