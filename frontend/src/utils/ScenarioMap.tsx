@@ -41,20 +41,7 @@ export const scenarioAdviceMap: Record<
     ],
     thrustAdvices: [{ min: 10, max: 30, type: AdviceType.advice, hinted: true }]
   },
-  // The operator should aim to hit the buoys
-  'navigate-buoys': {
-    angleDetentStrength: 1,
-    thrustDetentStrength: 1,
-    angleAdvices: [
-      { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
-      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 70, maxAngle: 250, type: AdviceType.caution, hinted: true }
-    ],
-    thrustAdvices: [
-      { min: 20, max: 60, type: AdviceType.advice, hinted: true },
-      { min: 80, max: 100, type: AdviceType.caution, hinted: true }
-    ]
-  },
+
   // The operator shuold leave the harbor. The harbor has a speed limit of 4 knots
   // After leaving the harbor, they should aim for 8 knots
   // Due to the speed limit, boundaries should be set at 4 knots
