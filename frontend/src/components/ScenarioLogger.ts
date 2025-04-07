@@ -124,10 +124,28 @@ export function ScenarioLogger({
     })
     
     if (inBoundary && !boundaryActive.current) {
+      console.log('Boundary entered')
       boundaryActive.current = true
       boundaryEnterTime.current = Date.now()
+    
+      const now = new Date().toISOString()
+    
+      setLogData((prev) => [
+        ...prev,
+        {
+          timestamp: now,
+          thrust: simulatorData.thrust,
+          azimuthAngle: simulatorData.angle,
+          reactionTime: null,
+          exitTime: null,
+          alertType: 'boundary',
+          alertCategory: undefined,
+          scenario: selectedScenario
+        }
+      ])
     }
-  }, [simulatorData, thrustAdvices, angleAdvices, isLogging, boundaryConfig])
+    
+  }, [simulatorData, thrustAdvices, angleAdvices, isLogging, boundaryConfig, setLogData, selectedScenario])
 
   // T2: Operator responds
   useEffect(() => {

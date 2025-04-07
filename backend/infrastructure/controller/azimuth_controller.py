@@ -284,17 +284,18 @@ class AzimuthController:
             print("[ERROR] Not connected to Modbus. Cannot set detents.")
             return False
 
-        thrust_hregs = [140, 141]
-        angle_hregs = [240, 241]
+        thrust_hregs = [140, 141, 142, 143]
+        angle_hregs = [240, 241, 242, 243, 244, 245]
         strength_thrust_hreg = 100
         strength_angle_hreg = 200
+        
 
         try:
             # Enable detents globally
             await self.client.write_coil(address=1, value=True, slave=self.slave_id)
 
             # Safety: Only support up to 2 detents due to register limitations
-            detents = detents[:2]
+            #detents = detents[:2]
 
             if type == "thrust":
                 logger.info("Trying to set detents for thruster")
@@ -321,6 +322,8 @@ class AzimuthController:
                 for i, pos in enumerate(detents):
                     await self.client.write_register(angle_hregs[i], value=pos, slave=self.slave_id)
                     logger.info(f"Set ANGLE detent {i+1} at pos={pos} (reg={angle_hregs[i]})")
+                    await asyncio.sleep(0.1)  # Add 100ms delay (tune as needed)
+
 
                 await self.client.write_register(strength_angle_hreg, value=detent_strength, slave=self.slave_id)
                 logger.info(f"Set ANGLE strength {detent_strength} at reg={strength_angle_hreg}")
@@ -346,9 +349,10 @@ class AzimuthController:
             return False
         
         enable_boundary_reg = 3
+        enable_angle_boundary_reg = 203
+        enable_thrust_boundary_reg = 103
 
-        if enable:
-        
+        if enable:        
             thrust_boundary_lower = 130
             thrust_boundary_upper = 131
             
@@ -359,11 +363,10 @@ class AzimuthController:
             angle_boundary_strength = 202
             
             try:
-                await self.client.write_coil(address=enable_boundary_reg, value=enable, slave=self.slave_id)
-
                 if (type == "thrust"):
                     logger.info("Trying to set boundary for thruster")
-                    
+                    await self.client.write_coil(address=enable_thrust_boundary_reg, value=enable, slave=self.slave_id)
+
                     # The positioning of the boundary
                     await self.client.write_register(address=thrust_boundary_lower, value=lower, slave=self.slave_id)
                     await self.client.write_register(address=thrust_boundary_upper, value=upper, slave=self.slave_id)
@@ -376,6 +379,8 @@ class AzimuthController:
                     logger.info(f" Set thrust boundary strength to {boundary} at register {thrust_boundary_strength}")
                     return True
                 if (type == "angle"):
+                    await self.client.write_coil(address=enable_angle_boundary_reg, value=enable, slave=self.slave_id)
+
                     # The positioning of the boundary
                     await self.client.write_register(address=angle_boundary_lower, value=lower, slave=self.slave_id)
                     await self.client.write_register(address=angle_boundary_upper, value=upper, slave=self.slave_id)

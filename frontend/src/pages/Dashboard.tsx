@@ -120,8 +120,9 @@ export function Dashboard() {
       state?.alertConfig ||
       ({
         vibrationEnter: 2,
-        enableVibration: true,
+        enableVibration: false,
         enableDetents: false,
+        enableBoundaries: false,
         adviceHighResistance: true,
         regularHighResistance: true
       } as AlertConfig),
@@ -239,6 +240,7 @@ export function Dashboard() {
   })
 
   useBoundaryFeedback({
+    enabled: alertConfig.enableBoundaries,
     config: boundaryConfig,
     sendToBackend
   })
@@ -277,6 +279,30 @@ export function Dashboard() {
     void navigate('/')
   }
 
+  const handleScenarioChange = (newScenario: ScenarioKey) => {
+    if (newScenario !== selectedScenario) {
+      // If logging is active, stop it and save current data
+      if (isLogging) {
+        stopLogging() // you can expand this to also export/save if needed
+      }
+
+      setSelectedScenario(newScenario)
+
+      // Start new logging session if simulation is running
+      if (simulationRunning) {
+        scenarioId.current = new Date().toISOString()
+        setLogData([])
+        setIsLogging(true)
+        console.log(`Started logging for scenario ${newScenario}`)
+      } else {
+        console.warn(
+          'Scenario changed but simulation is not running. Logging not started.'
+        )
+      }
+    }
+  }
+
+  /*
   const startLogging = () => {
     if (!simulationRunning) {
       console.warn('Cannot start logging when simulation is not running.')
@@ -287,6 +313,7 @@ export function Dashboard() {
     setIsLogging(true)
     console.log(`Started logging scenario ${scenarioCount.current}`)
   }
+    */
 
   const stopLogging = () => {
     if (logData.length > 0 && scenarioId.current) {
@@ -300,14 +327,14 @@ export function Dashboard() {
 
   const toggleScenario = () => {
     if (isLogging) stopLogging()
-    else startLogging()
+    else handleScenarioChange(selectedScenario)
   }
 
   return (
     <div>
       <ScenarioControlPanel
         selectedScenario={selectedScenario}
-        onScenarioChange={setSelectedScenario}
+        onScenarioChange={handleScenarioChange}
         showAzimuth={showAzimuth}
         toggleAzimuth={() => setShowAzimuth((prev) => !prev)}
         onStopSimulation={stopSimulation}

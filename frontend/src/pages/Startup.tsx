@@ -29,7 +29,8 @@ export function Startup() {
     adviceHighResistance: true,
     regularHighResistance: false,
     vibrationStrengthThruster: 1,
-    vibrationStrengthAngle: 1
+    vibrationStrengthAngle: 1,
+    enableBoundaries: true
   })
 
   const initialSimData: SimulatorData = {
@@ -42,8 +43,8 @@ export function Startup() {
     consumptionRate: 0,
     consumedTotal: 0,
     checkpoints: 3,
-    power: 0, // Power of azimuth thruster
-    angle: 0 // Angle of azimuth thruster
+    thrust: 0,
+    angle: 0
   }
   // Create WebSocket connection to the simulator
   const { sendMessage: sendToSimulator } = UseSimulatorWebSocket(
@@ -274,28 +275,6 @@ export function Startup() {
             </div>
           ))}
 
-          {/* Checkbox options */}
-          <div className="label-container">
-            <div className="label-wrapper">
-              <span
-                className="info-icon"
-                data-tooltip="Enable vibration feedback"
-              >
-                ℹ
-              </span>
-              <label>Enable Vibration</label>
-            </div>
-            <input
-              type="checkbox"
-              checked={alertConfig.enableVibration}
-              onChange={() =>
-                setAlertConfig((prev) => ({
-                  ...prev,
-                  enableVibration: !prev.enableVibration
-                }))
-              }
-            />
-          </div>
           {alertConfig.enableVibration && (
             <>
               <div className="label-container">
@@ -347,7 +326,28 @@ export function Startup() {
               </div>
             </>
           )}
-
+          {/* Checkbox options */}
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Enable vibration feedback"
+              >
+                ℹ
+              </span>
+              <label>Enable Vibration</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.enableVibration}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  enableVibration: !prev.enableVibration
+                }))
+              }
+            />
+          </div>
           <div className="label-container">
             <div className="label-wrapper">
               <span className="info-icon" data-tooltip="Enable detent feedback">
@@ -366,6 +366,28 @@ export function Startup() {
               }
             />
           </div>
+          <div className="label-container">
+            <div className="label-wrapper">
+              <span
+                className="info-icon"
+                data-tooltip="Enable physical haptic boundary walls in the controller"
+              >
+                ℹ
+              </span>
+              <label>Enable Boundaries</label>
+            </div>
+            <input
+              type="checkbox"
+              checked={alertConfig.enableBoundaries}
+              onChange={() =>
+                setAlertConfig((prev) => ({
+                  ...prev,
+                  enableBoundaries: !prev.enableBoundaries
+                }))
+              }
+            />
+          </div>
+
           {/* Toggle for High Resistance Inside Advice Zones */}
           <div className="label-container">
             <div className="label-wrapper">

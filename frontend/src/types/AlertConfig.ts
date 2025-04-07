@@ -6,4 +6,5 @@ export type AlertConfig = {
   regularHighResistance: boolean
   vibrationStrengthThruster: number
   vibrationStrengthAngle: number
+  enableBoundaries: boolean
 }
