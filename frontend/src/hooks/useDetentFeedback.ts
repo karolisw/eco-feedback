@@ -3,8 +3,6 @@ import { AngleAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instr
 import { LinearAdvice } from '@oicl/openbridge-webcomponents/src/navigation-instruments/thruster/advice'
 import { AlertConfig } from '../types/AlertConfig'
 
-
-
 type UseDetentFeedbackProps = {
   thrust: number
   angle: number
