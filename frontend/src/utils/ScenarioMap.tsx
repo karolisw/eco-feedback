@@ -34,10 +34,9 @@ export const scenarioAdviceMap: Record<
     angleDetentStrength: 1,
     thrustDetentStrength: 1,
     angleAdvices: [
-      { minAngle: 320, maxAngle: 359, type: AdviceType.advice, hinted: true },
-      { minAngle: 1, maxAngle: 40, type: AdviceType.advice, hinted: true },
-      { minAngle: 110, maxAngle: 250, type: AdviceType.caution, hinted: true }
-      //{ minAngle: 181, maxAngle: 250, type: AdviceType.caution, hinted: true }
+      { minAngle: 345, maxAngle: 359, type: AdviceType.advice, hinted: true },
+      { minAngle: 1, maxAngle: 15, type: AdviceType.advice, hinted: true },
+      { minAngle: 50, maxAngle: 200, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [{ min: 10, max: 30, type: AdviceType.advice, hinted: true }]
   },
@@ -54,8 +53,8 @@ export const scenarioAdviceMap: Record<
       { minAngle: 60, maxAngle: 240, type: AdviceType.caution, hinted: true }
     ],
     thrustAdvices: [
-      { min: 10, max: 40, type: AdviceType.advice, hinted: true },
-      { min: 45, max: 100, type: AdviceType.caution, hinted: true }
+      { min: 20, max: 50, type: AdviceType.advice, hinted: true },
+      { min: 50, max: 100, type: AdviceType.caution, hinted: true }
     ],
     boundaries: [
       {
@@ -67,6 +66,7 @@ export const scenarioAdviceMap: Record<
       }
     ]
   },
+  /*
   'unknown-vibration': {
     angleDetentStrength: 1,
     thrustDetentStrength: 1,
@@ -77,6 +77,7 @@ export const scenarioAdviceMap: Record<
       { min: 30, max: 80, type: AdviceType.caution, hinted: true }
     ]
   },
+  */
   'narrow-fjord': {
     angleDetentStrength: 1,
     thrustDetentStrength: 1,
